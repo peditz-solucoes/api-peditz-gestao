@@ -17,6 +17,19 @@ FIELDS_TYPES = (
     ('text', _('Text')),
     ('number', 'Incremento | número'),
 )
+
+class RestauratCategory(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Restaurant Category')
+        verbose_name_plural = _('Restaurant Categories')
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    slug = models.SlugField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.title
+
 class Restaurant(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Restaurant')
@@ -25,7 +38,7 @@ class Restaurant(TimeStampedModel, UUIDModel):
     email = models.EmailField(verbose_name=_('Email'), blank=True, unique=True)
     slug = models.SlugField(max_length=255, unique=True)
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
     phone = PhoneNumberField(verbose_name=_(
         'Phone'), blank=True, unique=True, region='BR')
     zip_code = BRPostalCodeField(verbose_name=_('Zip Code'), blank=True, null=True)
@@ -36,6 +49,8 @@ class Restaurant(TimeStampedModel, UUIDModel):
     complement = models.CharField(max_length=255, default='', blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
     photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
+    category = models.ForeignKey(RestauratCategory, on_delete=models.SET_NULL, related_name='restaurants', null=True, blank=True)
+    open = models.BooleanField(default=True)
     def __str__(self):
         return self.title
     
@@ -54,6 +69,7 @@ class Employer(TimeStampedModel, UUIDModel):
     active = models.BooleanField(default=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='employers')
+    code = models.CharField(max_length=255, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer')
 
     def __str__(self):
