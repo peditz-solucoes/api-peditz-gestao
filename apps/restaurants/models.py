@@ -6,9 +6,11 @@ from model_utils.models import (
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from apps.user.models import User
-from localflavor.br.models import BRCPFField
+from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
 
 # Create your models here.
+def upload_path(instance, filname):
+    return '/'.join(['restaurants', str(instance.title), filname])
 
 FIELDS_TYPES = (
     ('checkbox', _('Checkbox')),
@@ -20,14 +22,20 @@ class Restaurant(TimeStampedModel, UUIDModel):
         verbose_name = _('Restaurant')
         verbose_name_plural = _('Restaurants')
     
+    email = models.EmailField(verbose_name=_('Email'), blank=True, unique=True)
+    slug = models.SlugField(max_length=255, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    address = models.CharField(max_length=255)
     phone = PhoneNumberField(verbose_name=_(
         'Phone'), blank=True, unique=True, region='BR')
-    email = models.EmailField(verbose_name=_('Email'), blank=True, unique=True)
+    zip_code = BRPostalCodeField(verbose_name=_('Zip Code'), blank=True, null=True)
+    state = BRStateField(verbose_name=_('State'), blank=True, null=True)
+    city = models.CharField(max_length=255, default='', blank=True, null=True)
+    street = models.CharField(max_length=255, default='', blank=True, null=True)
+    number = models.CharField(max_length=255, default='', blank=True, null=True)
+    complement = models.CharField(max_length=255, default='', blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
-
+    photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
     def __str__(self):
         return self.title
     

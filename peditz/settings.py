@@ -12,8 +12,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
+import time
 import environ
-
 env = environ.Env()
 
 
@@ -42,19 +42,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'drf_spectacular',
     'apps.user',
     'apps.restaurants',
-    'phonenumber_field',
-    'localflavor',
+
+    # Contrib Apps
     'rest_framework',
     'rest_framework.authtoken',
     'dj_rest_auth',
-    'dj_rest_auth.registration',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
-    'rest_framework_simplejwt',
+    'dj_rest_auth.registration',
+    'drf_yasg',
+    'corsheaders',
+    'localflavor',
+    'phonenumber_field',
+
 ]
 
 MIDDLEWARE = [
@@ -139,75 +141,78 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-AUTH_USER_MODEL = 'user.user'
+
+REST_SESSION_LOGIN = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+SITE_ID = 1
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_USERNAME_REQUIRED = False
+
+REST_USE_JWT = True
+JWT_AUTH_COOKIE = 'auth'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
     ),
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'PAGE_SIZE': 50
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
 
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Peditz gestão',
-    'DESCRIPTION': 'API para gestão de restaurantes e pedidos',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # OTHER SETTINGS
-    'COMPONENT_SPLIT_REQUEST': True,
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer'
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-SITE_ID = 1
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+SWAGGER_SETTINGS = {
+    'LOGIN_URL': 'rest_login',
+    'LOGOUT_URL': 'rest_logout',
+}
+
+# TODO: Use a white list in the real world.
+CORS_ORIGIN_ALLOW_ALL = True
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# CUSTOM USERS
+AUTH_USER_MODEL = 'user.user'
+
 
 REST_AUTH = {
-    'LOGIN_SERIALIZER': 'apps.user.api.serializers.UserLoginSerializer',
-    'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
-    'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
-    'JWT_SERIALIZER_WITH_EXPIRATION': 'dj_rest_auth.serializers.JWTSerializerWithExpiration',
-    'JWT_TOKEN_CLAIMS_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
-    'USER_DETAILS_SERIALIZER': 'dj_rest_auth.serializers.UserDetailsSerializer',
-    'PASSWORD_RESET_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetSerializer',
-    'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
-    'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
-
-    'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer',
-
-    'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
-
-    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
-    'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
-
-    'PASSWORD_RESET_USE_SITES_DOMAIN': False,
-    'OLD_PASSWORD_FIELD_ENABLED': False,
-    'LOGOUT_ON_PASSWORD_CHANGE': False,
-    'SESSION_LOGIN': True,
     'USE_JWT': True,
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'REST_USE_JWT': True,
-
-    'JWT_AUTH_COOKIE': "auth",
-    'JWT_AUTH_REFRESH_COOKIE': "refresh",
-    'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
-    'JWT_AUTH_SECURE': True,
-    'JWT_AUTH_HTTPONLY': True,
-    'JWT_AUTH_SAMESITE': 'Lax',
-    'JWT_AUTH_RETURN_EXPIRATION': False,
-    'JWT_AUTH_COOKIE_USE_CSRF': True,
-    'JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED': False,
+    'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer',
+    'LOGIN_SERIALIZER': 'apps.user.api.serializers.UserLoginSerializer',
 }
-AUTHENTICATION_BACKENDS = (
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-)
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1440),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+# DO SPACES
+
+expires = time.time() + 6 * 24 * 3600 # 6 days from now
+
+DEFAULT_FILE_STORAGE = 'peditz.storage_backends.CustomS3Boto3Storage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+AWS_ACCESS_KEY_ID = 'DO00EMLCZEXNBJN7XVEF'
+AWS_SECRET_ACCESS_KEY = 'Me5Qa4ejhi+RuDdQjDhmxX5yDzmMABPd71/GW+O/UTQ'
+AWS_STORAGE_BUCKET_NAME = "pracaappmix"
+AWS_S3_ENDPOINT_URL = "https://nyc3.digitaloceanspaces.com"
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+    "ACL": "public-read"
 }
+AWS_LOCATION = "https://pracaappmix.nyc3.digitaloceanspaces.com"
+
+CKEDITOR_UPLOAD_PATH = "site/uploads/"
+CKEDITOR_IMAGE_BACKEND = "pillow"
+
+THUMBNAIL_FORCE_OVERWRITE = True
+THUMBNAIL_QUALITY = 80
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+

@@ -18,23 +18,35 @@ from django.urls import include,path
 from rest_framework import routers
 from apps.restaurants.api.viewsets import RestaurantViewSet
 
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
 
 
 admin.sites.AdminSite.site_header = 'Adiministração Peditz'
 admin.sites.AdminSite.site_title = 'Peditz Gestão'
 admin.sites.AdminSite.index_title = 'Peditz Gestão'
 
+
 router = routers.DefaultRouter()
 
 router.register(r'restaurant', RestaurantViewSet, basename='restaurant') 
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title='API Docs',
+        default_version='v1',
+    )
+)
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include(router.urls)),
-    path('api/v1/auth/', include('dj_rest_auth.urls')),
+    path('api/v1/', include('rest_framework.urls')),
     path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/v1/auth/', include('dj_rest_auth.urls')),
+    path('api/v1/account/', include('allauth.urls')),
+    path('api/v1/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='api_docs'),
+
 ]

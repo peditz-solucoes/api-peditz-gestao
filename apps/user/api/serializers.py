@@ -49,6 +49,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         
 
 class UserLoginSerializer(LoginSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'password',
+        )
     
     def validate(self, attrs):
         username = attrs.get('username')
