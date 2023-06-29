@@ -23,14 +23,6 @@ PAYMENT_METHODS = (
     ('99', 'Outros'),
 )
 
-CARD_FLAGS = (
-    ('01', 'Visa'),
-    ('02', 'Mastercard'),
-    ('03', 'American Express'),
-    ('04', 'Sorocred'),
-    ('99', 'Outros'),
-)
-
 class Cashier(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Cashier')
