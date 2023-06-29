@@ -12,6 +12,24 @@ from django.db.models import Sum, Max
 from django.db import transaction
 
 # Create your models here.
+# Forma do recebimento. Alguns valores possíveis:01: Dinheiro.02: Cheque.03: Cartão de Crédito.04: Cartão de Débito.05: Crédito Loja.10: Vale Alimentação.11: Vale Refeição.12: Vale Presente.13: Vale Combustível.99: Outros
+PAYMENT_METHODS = (
+    ('01', 'Dinheiro'),
+    ('01', 'PIX'),
+    ('03', 'Cartão de Crédito'),
+    ('04', 'Cartão de Débito'),
+    ('10', 'Vale Alimentação'),
+    ('11', 'Vale Refeição'),
+    ('99', 'Outros'),
+)
+
+CARD_FLAGS = (
+    ('01', 'Visa'),
+    ('02', 'Mastercard'),
+    ('03', 'American Express'),
+    ('04', 'Sorocred'),
+    ('99', 'Outros'),
+)
 
 class Cashier(TimeStampedModel, UUIDModel):
     class Meta:
@@ -23,23 +41,24 @@ class Cashier(TimeStampedModel, UUIDModel):
     identifier = models.CharField(_('Identifier'), max_length=255, blank=True, null=True)
     initial_value = models.DecimalField(_('Initial value'), max_digits=10, decimal_places=2)
     opened_by_name = models.CharField(_('Opened by'), max_length=255, blank=True, null=True)
-    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.SET('Usuário deletado'), related_name='cashier_opened_by', blank=True, null=True)
+    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.PROTECT, related_name='cashier_opened_by')
     closed_by_name = models.CharField(_('Closed by'), max_length=255, blank=True, null=True)
-    closed_by = models.ForeignKey(User, verbose_name=_('Closed by'), on_delete=models.SET('Usuário deletado'), related_name='cashier_closed_by', blank=True, null=True)
+    closed_by = models.ForeignKey(User, verbose_name=_('Closed by'), on_delete=models.PROTECT, related_name='cashier_closed_by', blank=True, null=True)
     closed_at = models.DateTimeField(_('Closed at'), blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='cashiers')
 
-    def clean(self):
 
-        if self.open and self.opened_by is None:
-            raise ValidationError(_('A cashier can only be open if there is an associated user who opened it.'))
-
-        if not self.open and self.closed_by is None:
+    def clean(self) -> None:
+        if self.pk and self.open == False and self.closed_by is None:
             raise ValidationError(_('A cashier can only be closed if there is an associated user who closed it.'))
-
+        if self.pk and self.open == False and self.closed_at is None:
+            raise ValidationError(_('A cashier can only be closed if there is a closed_at date.'))
+        if self.pk and self.open == True and self.opened_by is None:
+            raise ValidationError(_('A cashier can only be open if there is an associated user who opened it.'))
         open_cashiers = Cashier.objects.filter(restaurant=self.restaurant, open=True)
         if self.open and open_cashiers.exists():
             raise ValidationError(_('There can only be one open cashier per restaurant.'))
+        super().clean()
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -71,13 +90,13 @@ class Bill(TimeStampedModel, UUIDModel):
     client_phone = PhoneNumberField(verbose_name=_('Phone'), blank=True, region='BR')
 
 
-    opened_by_name = models.CharField(_('Opened by'), max_length=255)
-    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.SET('Usuário deletado'), related_name='bill_opened_by')
+    opened_by_name = models.CharField(_('Opened by'), max_length=255, blank=True, null=True)
+    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.PROTECT, related_name='bill_opened_by')
 
     tip = models.DecimalField(_('Tip'), max_digits=10, decimal_places=2, default=0)
 
-    def save(self, *args, **kwargs):
 
+    def save(self, *args, **kwargs):
         if self.opened_by:
             self.opened_by_name = self.opened_by.get_full_name()
 
@@ -94,7 +113,7 @@ class Order(TimeStampedModel, UUIDModel):
 
     bill = models.ForeignKey(Bill, verbose_name=_('Bill'), on_delete=models.CASCADE, related_name='orders')
 
-    product = models.ForeignKey(Product, verbose_name=_('Product'), on_delete=models.SET('produto excluido'), related_name='orders')
+    product = models.ForeignKey(Product, verbose_name=_('Product'), on_delete=models.SET_NULL, related_name='orders', null=True, blank=True)
     product_title = models.CharField(_('Product title'), max_length=255)
 
     quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3)
@@ -122,17 +141,25 @@ class Order(TimeStampedModel, UUIDModel):
         return f'{self.product.title}'
     
 
+
 class PaymentMethod(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Payment Method')
         verbose_name_plural = _('Payment Methods')
-
-    title = models.CharField(_('Title'), max_length=255)
+        unique_together = ['restaurant', 'title']
+    method = models.CharField(_('Method'), max_length=255, choices=PAYMENT_METHODS, default=PAYMENT_METHODS[0][0])
+    title = models.CharField(_('Title'), max_length=255, blank=True, null=True)
     active = models.BooleanField(_('Active'), default=True)
     order = models.IntegerField(_('Order'), default=0)
     tax_percentage = models.DecimalField(_('Tax percentage'), max_digits=3, decimal_places=2, default=0)
     tax = models.DecimalField(_('Tax'), max_digits=10, decimal_places=2, default=0)
     payout_schedule = models.IntegerField(_('Payout schedule'), help_text=_("Number of days to receive the payment"), default=0)
+    restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='payment_methods')
+
+    def save(self, *args, **kwargs):
+        if self.method:
+            self.title = dict(PAYMENT_METHODS)[self.method]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title}'
@@ -144,7 +171,7 @@ class Payment(TimeStampedModel, UUIDModel):
 
     bill = models.ForeignKey(Bill, verbose_name=_('Bill'), on_delete=models.CASCADE, related_name='payments')
 
-    payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.SET('Método de pagamento excluído'), related_name='payments')
+    payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.PROTECT, related_name='payments')
     payment_method_title = models.CharField(_('Payment Method title'), max_length=255)
     
     value = models.DecimalField(_('Value'), max_digits=10, decimal_places=2)
@@ -159,8 +186,9 @@ class Payment(TimeStampedModel, UUIDModel):
         if self.bill:
             all_payments = Payment.objects.filter(bill=self.bill)
             total_payments = all_payments.aggregate(Sum('value'))['value__sum'] or 0
-            if total_payments + self.value > self.bill.total:
-                self.bill.tip = total_payments - self.bill.total
+            total_bill = Order.objects.filter(bill=self.bill).aggregate(Sum('total'))['total__sum'] or 0
+            if total_payments + self.value > total_bill:
+                self.bill.tip = total_payments + self.value - total_bill
                 self.bill.save()
 
         super().save(*args, **kwargs)

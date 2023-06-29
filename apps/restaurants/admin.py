@@ -12,9 +12,11 @@ class ResstaurantAdmin(admin.ModelAdmin):
     save_on_top = True
     search_fields = ['title', 'slug', 'state', 'city', 'owner__first_name', 'owner__last_name', 'owner__email']
     list_filter = [('state', ChoiceDropdownFilter), ('category', ChoiceDropdownFilter), ('open',ChoiceDropdownFilter ) ]
+    readonly_fields = ['id']
     fieldsets = [
         (_('Restaurant'), {
             'fields': [
+                'id',
                 'photo',
                 'title',
                 'slug',

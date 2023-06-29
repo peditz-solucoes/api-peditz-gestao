@@ -62,15 +62,17 @@ class ItemTransaction(TimeStampedModel, UUIDModel):
     item = models.ForeignKey(Item, verbose_name=_('Item'), on_delete=models.CASCADE, related_name='transactions')
     quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3)
     unit_price = models.DecimalField(_('Unit Price'), max_digits=10, decimal_places=2)
-    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True)
 
     user = models.ForeignKey(User, verbose_name=_('User'), on_delete=models.SET('deleted'), related_name='item_transactions')
-    user_name = models.CharField(_('User name'), max_length=255)
+    user_name = models.CharField(_('User name'), max_length=255, blank=True, null=True)
 
     file = models.FileField(_('File'), upload_to=upload_path, blank=True, null=True)
 
     @transaction.atomic
     def save(self, *args, **kwargs):
+        if not self.total:
+            self.total = self.quantity * self.unit_price
         if self.user:
             self.user_name = self.user.get_full_name()
         self.item.stock += self.quantity

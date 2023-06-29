@@ -73,7 +73,7 @@ class Restaurant(TimeStampedModel, UUIDModel):
     street = models.CharField(max_length=255, default='', blank=True, null=True)
     number = models.CharField(max_length=255, default='', blank=True, null=True)
     complement = models.CharField(max_length=255, default='', blank=True, null=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='restaurants')
     photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
     category = models.ForeignKey(RestauratCategory, on_delete=models.SET_NULL, related_name='restaurants', null=True, blank=True)
     open = models.BooleanField(default=True)
@@ -129,7 +129,7 @@ class ProductCategory(TimeStampedModel, UUIDModel):
         Restaurant, on_delete=models.CASCADE, related_name='product_categories')
 
     def __str__(self):
-        return self.title
+        return f'{self.title} | {self.restaurant.title}'
 
 class Product(TimeStampedModel, UUIDModel):
     class Meta:
