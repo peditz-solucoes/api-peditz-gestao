@@ -7,16 +7,48 @@ from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from apps.user.models import User
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
-
-# Create your models here.
 def upload_path(instance, filname):
-    return '/'.join(['restaurants', str(instance.title), filname])
+    return '/'.join(['restaurants', str(instance.slug), filname])
+
+def upload_path_catalogs(instance, filname):
+    return '/'.join(['catalogs', str(instance.restaurant.stlug), str(instance.slug), filname])
 
 FIELDS_TYPES = (
     ('checkbox', _('Checkbox')),
     ('text', _('Text')),
     ('number', 'Incremento | número'),
 )
+PRODUCT_TYPES = (
+    ('KG', 'KG'),
+    ('L', 'L'),
+    ('UN', 'UN'),
+)
+ICMS_ORIGEM = (
+    ('0', '0 - Nacional'),
+    ('1', '1 - Estrangeira - Importação direta'),
+    ('2', '2 - Estrangeira - Adquirida no mercado interno'),
+    ('3', '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%'),
+    ('4', '4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes'),
+    ('5', '5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%'),
+    ('6', '6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural'),
+    ('7', '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural'),
+)
+ICMS_SITUACAO_TRIBUTARIA = (
+    ('102', '102 – Tributada pelo Simples Nacional sem permissão de crédito'),
+    ('300', '300 - Imune'),
+    ('500', '500 - CMS cobrado anteriormente por substituição tributária (substituído) ou por antecipação'),
+    ('00', '00 – tributada integralmente'),
+    ('40', '40 – Isenta'),
+    ('41', '41 - Não tributada'),
+    ('60', '60 - ICMS cobrado anteriormente por substituição tributária'),
+)
+ICMS_MODALIDADE_BASE_CALCULO = (
+    ('0', '0 – margem de valor agregado (%)'),
+    ('1', '1 – pauta (valor)'),
+    ('2', '2 – preço tabelado máximo (valor)'),
+    ('3', '3 – valor da operação'),
+)
+
 
 class RestauratCategory(TimeStampedModel, UUIDModel):
     class Meta:
@@ -52,7 +84,20 @@ class Restaurant(TimeStampedModel, UUIDModel):
     open = models.BooleanField(default=True)
     def __str__(self):
         return self.title
-    
+
+class Printer(models.Model):
+    name = models.CharField(max_length=100)
+    ip = models.CharField(max_length=100)
+    port = models.IntegerField()
+    active = models.BooleanField(default=True)
+    paper_width = models.IntegerField(default=80, help_text='valor em mm')
+    titleFontSize = models.IntegerField(default=18)
+    bodyFontSize = models.IntegerField(default=16)
+    footerFontSize = models.IntegerField(default=14)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='printers')
+    def __str__(self):
+        return self.name
+
 class Employer(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Employer')
@@ -104,7 +149,21 @@ class Product(TimeStampedModel, UUIDModel):
     listed = models.BooleanField(default=True)
     product_category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name='products')
-
+    printer = models.ForeignKey(
+        Printer, on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
+    
+    codigo_ncm = models.CharField(max_length=255, blank=True, null=True, help_text='Código NCM do produto (8 dígitos).')
+    codigo_produto = models.CharField(verbose_name=_('Product Code'), max_length=255, blank=True, null=True)
+    valor_unitario_comercial = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    valor_unitario_tributavel = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    product_tax_description = models.TextField(max_length=255, blank=True, null=True)
+    unidade_comercial = models.CharField(max_length=255, blank=True, null=True, choices=PRODUCT_TYPES, help_text='Unidade comercial do produto. Você pode utilizar valores como “KG”, “L”, “UN”, etc. Caso não se aplique utilize “UN”.')
+    unidade_tributavel = models.CharField(max_length=255, blank=True, null=True, choices=PRODUCT_TYPES, help_text='Unidade tributável do produto. Caso não se aplique utilize o mesmo valor do campo unidade_comercial.')
+    icms_origem = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_ORIGEM)
+    icms_situacao_tributaria =  models.CharField(blank=True, null=True, max_length=255, choices=ICMS_SITUACAO_TRIBUTARIA)
+    icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=3, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
+    icms_base_calculo = models.DecimalField(blank=True, null=True, max_digits=10, decimal_places=2, help_text='Base de cálculo do ICMS. Normalmente é igual ao valor_bruto.')
+    icms_modalidade_base_calculo = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_MODALIDADE_BASE_CALCULO)
     def __str__(self):
         return self.title
 
@@ -137,6 +196,25 @@ class Table(TimeStampedModel, UUIDModel):
     capacity = models.IntegerField(default=0)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='tables')
+
+    def __str__(self):
+        return self.title
+    
+class Catalog(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Catalog')
+        verbose_name_plural = _('Catalogs')
+        unique_together = ('restaurant', 'slug')
+    
+    title = models.CharField(max_length=255)
+    description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
+    slug = models.SlugField(max_length=255)
+    order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='catalogs')
+    photo = models.ImageField(upload_to=upload_path_catalogs, blank=True, null=True)
+    products = models.ManyToManyField(Product, related_name='catalogs', blank=True)
 
     def __str__(self):
         return self.title

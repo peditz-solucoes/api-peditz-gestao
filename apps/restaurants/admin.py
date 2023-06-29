@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Restaurant, Employer, Product, ProductCategory, ProductComplement, RestauratCategory, Table
+from .models import Restaurant, Employer, Product, ProductCategory, ProductComplement, RestauratCategory, Table, Catalog, Printer
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -74,8 +74,26 @@ class ProductAdmin(admin.ModelAdmin):
                 'active',
                 'listed',
                 'product_category',
+                'printer',
             ],
             'classes': []
+        }),
+        (_('Tax Module'), {
+            'fields': [
+                'codigo_ncm',
+                'codigo_produto',
+                'valor_unitario_comercial',
+                'valor_unitario_tributavel',
+                'product_tax_description',
+                'unidade_comercial',
+                'unidade_tributavel',
+                'icms_origem',
+                'icms_situacao_tributaria',
+                'icms_aliquota',
+                'icms_base_calculo',
+                'icms_modalidade_base_calculo',
+            ],
+            'classes': ['collapse']
         }),
     ]
     pass
@@ -99,4 +117,19 @@ class TableAdmin(admin.ModelAdmin):
     list_display_links = ['title', 'restaurant']
     search_fields = ['title'],
     list_filter = [('restaurant', RelatedDropdownFilter), ('active', ChoiceDropdownFilter)]
+    pass
+
+@admin.register(Catalog)
+class CatalogAdmin(admin.ModelAdmin):
+    list_display = ['title', 'restaurant', 'active', 'order']
+    list_editable = ['active', 'order']
+    list_display_links = ['title', 'restaurant']
+    search_fields = ['title'],
+    list_filter = [('restaurant', RelatedDropdownFilter), ('active', ChoiceDropdownFilter)]
+    filter_horizontal = ['products']
+    save_on_top = True
+    pass
+
+@admin.register(Printer)
+class PrinterAdmin(admin.ModelAdmin):
     pass

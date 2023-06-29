@@ -38,7 +38,3 @@ class EmployerViewSet(viewsets.ModelViewSet):
             return Response({"detail": "You must be an owner of a restaurant to create an employer."}, status=status.HTTP_403_FORBIDDEN)
 
         return super().create(request, *args, **kwargs)
-    
-    def perform_destroy(self, instance):
-        instance.user.delete()
-        instance.delete()
