@@ -34,8 +34,9 @@ router.register(r'restaurant', RestaurantViewSet, basename='restaurant')
 
 schema_view = get_schema_view(
     openapi.Info(
-        title='API Docs',
-        default_version='v1',
+        title='API Peditz Gestão',
+        default_version='0.0.1',
+        description='API para gestão de restaurantes',
     )
 )
 

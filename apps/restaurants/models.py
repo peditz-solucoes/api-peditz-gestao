@@ -35,12 +35,11 @@ class Restaurant(TimeStampedModel, UUIDModel):
         verbose_name = _('Restaurant')
         verbose_name_plural = _('Restaurants')
     
-    email = models.EmailField(verbose_name=_('Email'), blank=True, unique=True)
+    email = models.EmailField(verbose_name=_('Email'), blank=True)
     slug = models.SlugField(max_length=255, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
-    phone = PhoneNumberField(verbose_name=_(
-        'Phone'), blank=True, unique=True, region='BR')
+    phone = PhoneNumberField(verbose_name=_('Phone'), blank=True, region='BR')
     zip_code = BRPostalCodeField(verbose_name=_('Zip Code'), blank=True, null=True)
     state = BRStateField(verbose_name=_('State'), blank=True, null=True)
     city = models.CharField(max_length=255, default='', blank=True, null=True)

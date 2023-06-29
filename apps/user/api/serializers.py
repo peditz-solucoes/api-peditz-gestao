@@ -39,7 +39,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             first_name=self.data.get('first_name'),
             last_name=self.data.get('last_name'),
             is_active=True,
-            is_staff=True,
+            is_staff=False,
             username=self.data.get('email'),
             password=make_password(self.validated_data['password'])
         )

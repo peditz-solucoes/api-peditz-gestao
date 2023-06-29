@@ -11,6 +11,8 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Restaurant.objects.all()    
         return Restaurant.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
