@@ -8,7 +8,8 @@ from apps.restaurants.models import Restaurant, Table, Product
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
-from django.db.models import Sum
+from django.db.models import Sum, Max
+from django.db import transaction
 
 # Create your models here.
 
@@ -101,12 +102,19 @@ class Order(TimeStampedModel, UUIDModel):
     total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2)
 
     note = models.TextField(_('Note'), blank=True, null=True)
-
+    order_number = models.PositiveIntegerField(_('Order Number'), blank=True, null=True)
     def save(self, *args, **kwargs):
         if self.product:
             self.product_title = self.product.title
             self.unit_price = self.product.price
         self.total = self.quantity * self.unit_price
+
+        if not self.pk:
+            max_order_number = Order.objects.filter(bill__cashier__restaurant=self.bill.cashier.restaurant).aggregate(Max('order_number'))['order_number__max']
+            if max_order_number is None:
+                self.order_number = 1
+            else:
+                self.order_number = max_order_number + 1
 
         super().save(*args, **kwargs)
 
@@ -143,6 +151,7 @@ class Payment(TimeStampedModel, UUIDModel):
     
     note = models.TextField(_('Note'), blank=True, null=True)
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
         if self.payment_method:
             self.payment_method_title = self.payment_method.title

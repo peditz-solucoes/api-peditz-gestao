@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.user',
     'apps.restaurants',
     'apps.financial',
+    'apps.inventory',
 
     # Contrib Apps
     'rest_framework',

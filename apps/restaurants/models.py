@@ -11,7 +11,7 @@ def upload_path(instance, filname):
     return '/'.join(['restaurants', str(instance.slug), filname])
 
 def upload_path_catalogs(instance, filname):
-    return '/'.join(['catalogs', str(instance.restaurant.stlug), str(instance.slug), filname])
+    return '/'.join(['catalogs', str(instance.restaurant.slug), str(instance.slug), filname])
 
 PRODUCT_TYPES = (
     ('KG', 'KG'),
