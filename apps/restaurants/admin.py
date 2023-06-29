@@ -74,6 +74,7 @@ class ProductAdmin(admin.ModelAdmin):
                 'active',
                 'listed',
                 'product_category',
+                'type_of_sale',
                 'printer',
             ],
             'classes': []

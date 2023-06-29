@@ -13,11 +13,6 @@ def upload_path(instance, filname):
 def upload_path_catalogs(instance, filname):
     return '/'.join(['catalogs', str(instance.restaurant.stlug), str(instance.slug), filname])
 
-FIELDS_TYPES = (
-    ('checkbox', _('Checkbox')),
-    ('text', _('Text')),
-    ('number', 'Incremento | número'),
-)
 PRODUCT_TYPES = (
     ('KG', 'KG'),
     ('L', 'L'),
@@ -147,6 +142,8 @@ class Product(TimeStampedModel, UUIDModel):
     order = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
     listed = models.BooleanField(default=True)
+    type_of_sale = models.CharField(max_length=3, choices=PRODUCT_TYPES, default='UN')
+    complemet_limit = models.IntegerField(default=0, help_text='Quatidade máxima de complementos que podem ser adicionados ao produto.')
     product_category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name='products')
     printer = models.ForeignKey(
@@ -173,10 +170,7 @@ class ProductComplement(TimeStampedModel, UUIDModel):
         verbose_name_plural = _('Product Complements')
     
     title = models.CharField(max_length=255)
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     order = models.IntegerField(default=0)
-    type = models.CharField(_('field type'), choices=FIELDS_TYPES, max_length=10, blank=False)
     active = models.BooleanField(default=True)
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='complements')
