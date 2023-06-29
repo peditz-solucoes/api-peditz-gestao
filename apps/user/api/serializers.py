@@ -49,12 +49,14 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         
 
 class UserLoginSerializer(LoginSerializer):
+    username = serializers.ReadOnlyField()
     class Meta:
         model = User
         fields = (
             'email',
             'password',
         )
+
     
     def validate(self, attrs):
         username = attrs.get('username')

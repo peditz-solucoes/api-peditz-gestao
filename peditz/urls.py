@@ -16,7 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include,path
 from rest_framework import routers
-from apps.restaurants.api.viewsets import RestaurantViewSet
+from apps.restaurants.api.viewsets import RestaurantViewSet, EmployerViewSet
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -31,6 +31,7 @@ admin.sites.AdminSite.index_title = 'Peditz Gestão'
 router = routers.DefaultRouter()
 
 router.register(r'restaurant', RestaurantViewSet, basename='restaurant') 
+router.register(r'employer', EmployerViewSet, basename='employer') 
 
 schema_view = get_schema_view(
     openapi.Info(

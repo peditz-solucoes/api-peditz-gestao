@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Restaurant, Employer, Product, ProductCategory, ProductComplement, RestauratCategory
+from .models import Restaurant, Employer, Product, ProductCategory, ProductComplement, RestauratCategory, Table
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -90,4 +90,13 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(RestauratCategory)
 class ProductComplementAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Table)
+class TableAdmin(admin.ModelAdmin):
+    list_display = ['title','restaurant', 'capacity','active', 'order']
+    list_editable = ['active', 'order']
+    list_display_links = ['title', 'restaurant']
+    search_fields = ['title'],
+    list_filter = [('restaurant', RelatedDropdownFilter), ('active', ChoiceDropdownFilter)]
     pass

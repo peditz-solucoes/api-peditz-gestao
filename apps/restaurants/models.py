@@ -57,7 +57,11 @@ class Employer(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Employer')
         verbose_name_plural = _('Employers')
-        unique_together = ('cpf', 'restaurant')
+        unique_together = (
+            ('cpf', 'restaurant'), 
+            ('phone', 'restaurant'), 
+            ('code', 'restaurant')
+        )
     
     cpf = BRCPFField(verbose_name=_('CPF'))
     address = models.CharField(max_length=255)
@@ -117,6 +121,22 @@ class ProductComplement(TimeStampedModel, UUIDModel):
     active = models.BooleanField(default=True)
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='complements')
+
+    def __str__(self):
+        return self.title
+    
+class Table(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Table')
+        verbose_name_plural = _('Tables')
+    
+    title = models.CharField(max_length=255)
+    description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
+    order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
+    capacity = models.IntegerField(default=0)
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='tables')
 
     def __str__(self):
         return self.title

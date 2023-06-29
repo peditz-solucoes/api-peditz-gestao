@@ -165,6 +165,9 @@ REST_FRAMEWORK = {
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer'
 }
+REST_AUTH_LOGIN_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'apps.user.api.serializers.UserLoginSerializer'
+}
 
 SWAGGER_SETTINGS = {
     'LOGIN_URL': 'rest_login',

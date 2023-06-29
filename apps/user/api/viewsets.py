@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from drf_spectacular.utils import extend_schema
 
 from rest_framework import (
     viewsets,
@@ -13,7 +12,6 @@ from .serializers import (
     UserSerializer,
 )
 
-@extend_schema(tags=['auth'])
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     
