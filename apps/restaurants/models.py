@@ -95,8 +95,8 @@ class Printer(models.Model):
 
 class Employer(TimeStampedModel, UUIDModel):
     class Meta:
-        verbose_name = _('Employer')
-        verbose_name_plural = _('Employers')
+        verbose_name = _('Employee')
+        verbose_name_plural = _('Employees')
         unique_together = (
             ('cpf', 'restaurant'), 
             ('phone', 'restaurant'), 
