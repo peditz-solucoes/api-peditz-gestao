@@ -159,13 +159,10 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_USERNAME_REQUIRED = False
 
 REST_USE_JWT = True
-JWT_AUTH_COOKIE = 'auth'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
@@ -201,8 +198,11 @@ REST_AUTH = {
     'REST_USE_JWT': True,
     'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer',
     'LOGIN_SERIALIZER': 'apps.user.api.serializers.UserLoginSerializer',
+    'CSRF_COOKIE_SECURE': False
 }
-
+JWT_AUTH_COOKIE = 'auth'
+CSRF_COOKIE_SECURE = False
+JWT_AUTH_COOKIE_USE_CSRF = False
 # DO SPACES
 
 expires = time.time() + 6 * 24 * 3600 # 6 days from now
