@@ -163,8 +163,31 @@ class Product(TimeStampedModel, UUIDModel):
     icms_modalidade_base_calculo = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_MODALIDADE_BASE_CALCULO)
     def __str__(self):
         return self.title
+    
+class ProductComplementCategory(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Product Complement Category')
+        verbose_name_plural = _('Product Complement Categories')
 
-class ProductComplement(TimeStampedModel, UUIDModel):
+    title = models.CharField(max_length=255)
+    order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
+    input_type = models.CharField(max_length=255, choices=(
+        ('checkbox', 'checkbox'),
+        ('radio', 'radio'),
+        ('number', 'number'),
+    ), default='checkbox')
+    business_rules = models.TextField(blank=True, null=True, choices=(
+        ('maior', 'maior'),
+        ('soma', 'soma'),
+        ('media', 'media'),
+    ))
+    max_value = models.IntegerField(default=0)
+    min_value = models.IntegerField(default=0)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='complement_categories')
+
+class ProductComplementItem(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Product Complement')
         verbose_name_plural = _('Product Complements')
@@ -172,8 +195,11 @@ class ProductComplement(TimeStampedModel, UUIDModel):
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name='complements')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    max_value = models.IntegerField(default=0)
+    min_value = models.IntegerField(default=0)
+    complementCategory = models.ForeignKey(
+        ProductComplementCategory, on_delete=models.CASCADE, related_name='complements')
 
     def __str__(self):
         return self.title

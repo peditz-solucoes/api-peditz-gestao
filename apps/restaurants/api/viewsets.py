@@ -1,8 +1,8 @@
 
 
 from rest_framework import viewsets
-from apps.restaurants.models import Restaurant, Employer, ProductCategory
-from .serializers import RestaurantSerializer, EmployerSerializer, ProductCategorySerializer
+from apps.restaurants.models import Restaurant, Employer, ProductCategory, Product
+from .serializers import RestaurantSerializer, EmployerSerializer, ProductCategorySerializer, ProductSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -49,3 +49,10 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         restaurant = Restaurant.objects.get(owner=self.request.user)
         serializer.save(restaurant=restaurant)
+
+class ProductViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return  Product.objects.filter(product_category__restaurant__owner=self.request.user)

@@ -2,7 +2,7 @@
 from rest_framework import serializers
 
 from apps.user.models import User
-from apps.restaurants.models import Restaurant, RestauratCategory, Employer, ProductCategory
+from apps.restaurants.models import Product, Restaurant, RestauratCategory, Employer, ProductCategory
 from django.db import transaction
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -113,3 +113,8 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         model = ProductCategory
         fields = '__all__'
         read_only_fields = ('restaurant',)
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = '__all__'

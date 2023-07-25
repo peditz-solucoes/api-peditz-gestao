@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Restaurant, Employer, Product, ProductCategory, ProductComplement, RestauratCategory, Table, Catalog, Printer
+from .models import Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -51,7 +51,7 @@ class EmployerAdmin(admin.ModelAdmin):
     pass
 
 class ExtraFieldsInline(admin.TabularInline):
-    model = ProductComplement
+    model = ProductComplementCategory
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):

@@ -162,7 +162,7 @@ REST_USE_JWT = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
@@ -213,6 +213,7 @@ AUTH_USER_MODEL = 'user.user'
 REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
+
     'REST_USE_JWT': True,
     'REGISTER_SERIALIZER': 'apps.user.api.serializers.UserSerializer',
     'LOGIN_SERIALIZER': 'apps.user.api.serializers.UserLoginSerializer',
@@ -246,3 +247,20 @@ THUMBNAIL_QUALITY = 80
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+JWT_AUTH = {
+    # how long the original token is valid for
+    'JWT_EXPIRATION_DELTA': timedelta(seconds=1296000),
+
+    # allow refreshing of tokens
+    'JWT_ALLOW_REFRESH': True,
+
+    # this is the maximum time AFTER the token was issued that
+    # it can be refreshed.  exprired tokens can't be refreshed.
+    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
+}
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=20),
+}
