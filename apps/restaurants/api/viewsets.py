@@ -1,8 +1,8 @@
 
 
 from rest_framework import viewsets
-from apps.restaurants.models import Restaurant, Employer
-from .serializers import RestaurantSerializer, EmployerSerializer
+from apps.restaurants.models import Restaurant, Employer, ProductCategory
+from .serializers import RestaurantSerializer, EmployerSerializer, ProductCategorySerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -38,3 +38,14 @@ class EmployerViewSet(viewsets.ModelViewSet):
             return Response({"detail": "You must be an owner of a restaurant to create an employer."}, status=status.HTTP_403_FORBIDDEN)
 
         return super().create(request, *args, **kwargs)
+    
+class ProductCategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductCategorySerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return ProductCategory.objects.filter(restaurant__owner=self.request.user) 
+
+    def perform_create(self, serializer):
+        restaurant = Restaurant.objects.get(owner=self.request.user)
+        serializer.save(restaurant=restaurant)
