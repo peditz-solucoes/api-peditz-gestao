@@ -85,5 +85,6 @@ class ProductComplentItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementItemSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['title']
     def get_queryset(self):
         return  ProductComplementItem.objects.filter()
