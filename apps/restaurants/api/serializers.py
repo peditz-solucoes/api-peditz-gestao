@@ -2,7 +2,15 @@
 from rest_framework import serializers
 
 from apps.user.models import User
-from apps.restaurants.models import Product, Restaurant, RestauratCategory, Employer, ProductCategory
+from apps.restaurants.models import( 
+    Product, 
+    Restaurant, 
+    RestauratCategory,
+    Employer,
+    ProductCategory,
+    ProductComplementCategory,
+    ProductComplementItem
+)
 from django.db import transaction
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,3 +128,36 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+
+class ProductComplementItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductComplementItem
+        fields = '__all__'
+
+
+class ProductComplementSerializer(serializers.ModelSerializer):
+    complement_items = ProductComplementItemSerializer(many=True)
+
+    class Meta:
+        model = ProductComplementCategory
+        fields = ['id', 'title', 'order', 'active', 'input_type', 'business_rules', 'max_value', 'min_value', 'product', 'complement_items']
+    
+    def update(self, instance, validated_data):
+        complement_items_data = validated_data.pop('complement_items', [])
+
+        instance = super().update(instance, validated_data)
+
+        for item_data in complement_items_data:
+            item_id = item_data.get('id', None)
+            if item_id:
+                # Se o item id existe, atualiza o item
+                item_instance, created = ProductComplementItem.objects.get_or_create(id=item_id, complementCategory=instance)
+                for attr, value in item_data.items():
+                    setattr(item_instance, attr, value)
+                item_instance.save()
+            else:
+                # Se o item id não existe, cria um novo item
+                item_data.pop('complementCategory', None)  # Remove 'complementCategory' de 'item_data'
+                ProductComplementItem.objects.create(complementCategory=instance, **item_data)
+
+        return instance

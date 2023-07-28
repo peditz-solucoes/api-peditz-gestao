@@ -185,6 +185,9 @@ class ProductComplementCategory(TimeStampedModel, UUIDModel):
     min_value = models.IntegerField(default=0)
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='complement_categories')
+    
+    def __str__(self):
+        return self.title + " | " + self.product.title
 
 class ProductComplementItem(TimeStampedModel, UUIDModel):
     class Meta:
@@ -198,7 +201,7 @@ class ProductComplementItem(TimeStampedModel, UUIDModel):
     max_value = models.IntegerField(default=0)
     min_value = models.IntegerField(default=0)
     complementCategory = models.ForeignKey(
-        ProductComplementCategory, on_delete=models.CASCADE, related_name='complements')
+        ProductComplementCategory, on_delete=models.CASCADE, related_name='complement_items')
 
     def __str__(self):
         return self.title

@@ -1,8 +1,22 @@
 
 
 from rest_framework import viewsets
-from apps.restaurants.models import Restaurant, Employer, ProductCategory, Product
-from .serializers import RestaurantSerializer, EmployerSerializer, ProductCategorySerializer, ProductSerializer
+from apps.restaurants.models import (
+    Restaurant,
+    Employer,
+    ProductCategory,
+    Product,
+    ProductComplementCategory,
+    ProductComplementItem    
+)
+from .serializers import (
+    RestaurantSerializer, 
+    EmployerSerializer, 
+    ProductCategorySerializer, 
+    ProductSerializer,
+    ProductComplementSerializer,
+    ProductComplementItemSerializer
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -56,6 +70,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product_category', 'active', 'listed','printer']
+    filterset_fields = ['product_category', 'active', 'listed','printer', 'title']
     def get_queryset(self):
         return  Product.objects.filter(product_category__restaurant__owner=self.request.user)
+class ProductComplentViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductComplementSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product', 'active']
+    def get_queryset(self):
+        return  ProductComplementCategory.objects.filter()
+    
+class ProductComplentItemViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductComplementItemSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    def get_queryset(self):
+        return  ProductComplementItem.objects.filter()
