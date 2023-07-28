@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'localflavor',
     'phonenumber_field',
     'django_admin_listfilter_dropdown',
+    'django_filters',
 
 ]
 
@@ -165,6 +166,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
 

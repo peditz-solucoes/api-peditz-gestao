@@ -6,6 +6,8 @@ from .serializers import RestaurantSerializer, EmployerSerializer, ProductCatego
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+
 
 
 class RestaurantViewSet(viewsets.ModelViewSet):
@@ -53,6 +55,7 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = (IsAuthenticated,)
-
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product_category', 'active', 'listed','printer']
     def get_queryset(self):
         return  Product.objects.filter(product_category__restaurant__owner=self.request.user)

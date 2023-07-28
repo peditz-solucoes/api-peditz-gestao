@@ -115,6 +115,8 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('restaurant',)
 
 class ProductSerializer(serializers.ModelSerializer):
+    category = ProductCategorySerializer(source='product_category', read_only=True)
+
     class Meta:
         model = Product
         fields = '__all__'

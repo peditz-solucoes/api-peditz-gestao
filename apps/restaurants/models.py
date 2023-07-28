@@ -143,7 +143,6 @@ class Product(TimeStampedModel, UUIDModel):
     active = models.BooleanField(default=True)
     listed = models.BooleanField(default=True)
     type_of_sale = models.CharField(max_length=3, choices=PRODUCT_TYPES, default='UN')
-    complemet_limit = models.IntegerField(default=0, help_text='Quatidade máxima de complementos que podem ser adicionados ao produto.')
     product_category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name='products')
     printer = models.ForeignKey(
