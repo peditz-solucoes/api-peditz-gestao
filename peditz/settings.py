@@ -75,7 +75,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://api-expoente.up.railway.app', 'http://localhost:5173']
+CSRF_TRUSTED_ORIGINS = ['https://peditz-gestao-production.up.railway.app', 'http://localhost:5173']
 
 CORS_ALLOW_ALL_ORIGINS = True
 
