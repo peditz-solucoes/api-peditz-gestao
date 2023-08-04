@@ -1,16 +1,17 @@
 from django.db import models
+from django.dispatch import receiver
 from model_utils.models import (
     TimeStampedModel,
     UUIDModel,
 )
 from apps.user.models import User
-from apps.restaurants.models import Restaurant, Table, Product
+from apps.restaurants.models import Restaurant, Table, Product, ProductComplementItem
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import Sum, Max
 from django.db import transaction
-
+from django.db.models.signals import post_save
 # Create your models here.
 # Forma do recebimento. Alguns valores possíveis:01: Dinheiro.02: Cheque.03: Cartão de Crédito.04: Cartão de Débito.05: Crédito Loja.10: Vale Alimentação.11: Vale Refeição.12: Vale Presente.13: Vale Combustível.99: Outros
 PAYMENT_METHODS = (
@@ -108,31 +109,39 @@ class Order(TimeStampedModel, UUIDModel):
     product = models.ForeignKey(Product, verbose_name=_('Product'), on_delete=models.SET_NULL, related_name='orders', null=True, blank=True)
     product_title = models.CharField(_('Product title'), max_length=255)
 
-    quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3)
-    unit_price = models.DecimalField(_('Unit Price'), max_digits=10, decimal_places=2)
-    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2)
+    quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3, default=1)
+    unit_price = models.DecimalField(_('Unit Price'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
 
     note = models.TextField(_('Note'), blank=True, null=True)
     order_number = models.PositiveIntegerField(_('Order Number'), blank=True, null=True)
-    def save(self, *args, **kwargs):
-        if self.product:
-            self.product_title = self.product.title
-            self.unit_price = self.product.price
-        self.total = self.quantity * self.unit_price
-
-        if not self.pk:
-            max_order_number = Order.objects.filter(bill__cashier__restaurant=self.bill.cashier.restaurant).aggregate(Max('order_number'))['order_number__max']
-            if max_order_number is None:
-                self.order_number = 1
-            else:
-                self.order_number = max_order_number + 1
-
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.product.title}'
     
+class OrderComplement(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Order Complement')
+        verbose_name_plural = _('Order Complements')
+        ordering = ['-created']
+        unique_together = ['order', 'complement_item']
 
+    order = models.ForeignKey(Order, verbose_name=_('Order'), on_delete=models.CASCADE, related_name='complements')
+    complement_item = models.ForeignKey(ProductComplementItem, verbose_name=_('Complement Item'), on_delete=models.SET_NULL, related_name='order_complements', null=True, blank=True)
+    complement_item_title = models.CharField(_('Complement Item title'), max_length=255, default='', blank=True)
+
+    quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3, default=1)
+    unit_price = models.DecimalField(_('Unit Price'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
+
+    def save(self, *args, **kwargs):
+        if self.complement_item:
+            self.complement_item_title = self.complement_item.title
+            self.unit_price = self.complement_item.price
+        self.total = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.order.product.title} | {self.complement_item.complementCategory.title} | {self.complement_item_title}'
 
 class PaymentMethod(TimeStampedModel, UUIDModel):
     class Meta:
@@ -189,6 +198,18 @@ class Payment(TimeStampedModel, UUIDModel):
         return f'{self.payment_method.title} - {self.value}'
     
 
+@receiver(post_save, sender=Order)
+def update_bill_total(sender, instance, created, **kwargs):
+    if created:
+        if instance.product:
+            instance.product_title = instance.product.title
+            instance.unit_price = instance.product.price
+        max_order_number = Order.objects.filter(bill__cashier__restaurant=instance.bill.cashier.restaurant).aggregate(Max('order_number'))['order_number__max']
+        if max_order_number is None:
+            instance.order_number = 1
+        else:
+            instance.order_number = max_order_number + 1
+            
+
+
     
-
-

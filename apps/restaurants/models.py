@@ -204,7 +204,7 @@ class ProductComplementItem(TimeStampedModel, UUIDModel):
         ProductComplementCategory, on_delete=models.CASCADE, related_name='complement_items')
 
     def __str__(self):
-        return self.title
+        return f'{self.complementCategory.title} | {self.title}'
     
 class Table(TimeStampedModel, UUIDModel):
     class Meta:

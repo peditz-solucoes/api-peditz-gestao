@@ -16,7 +16,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include,path
 from rest_framework import routers
-from apps.restaurants.api.viewsets import ProductComplentItemViewSet, RestaurantViewSet, EmployerViewSet, ProductCategoryViewSet, ProductViewSet, ProductComplentViewSet
+from apps.restaurants.api.viewsets import (
+    ProductComplentItemViewSet, 
+    RestaurantViewSet, 
+    EmployerViewSet, 
+    ProductCategoryViewSet, 
+    ProductViewSet, 
+    ProductComplentViewSet,
+    TableViewSet
+)
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -36,6 +44,7 @@ router.register(r'product-category', ProductCategoryViewSet, basename='product-c
 router.register(r'product', ProductViewSet, basename='product') 
 router.register(r'product-complement', ProductComplentViewSet, basename='product-complement')
 router.register(r'product-complement-item', ProductComplentItemViewSet, basename='product-complement-item')
+router.register(r'tables', TableViewSet, basename='tables')
 
 schema_view = get_schema_view(
     openapi.Info(

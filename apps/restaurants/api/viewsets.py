@@ -7,7 +7,8 @@ from apps.restaurants.models import (
     ProductCategory,
     Product,
     ProductComplementCategory,
-    ProductComplementItem    
+    ProductComplementItem,
+    Table,
 )
 from .serializers import (
     RestaurantSerializer, 
@@ -15,7 +16,8 @@ from .serializers import (
     ProductCategorySerializer, 
     ProductSerializer,
     ProductComplementSerializer,
-    ProductComplementItemSerializer
+    ProductComplementItemSerializer,
+    TableSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -88,3 +90,9 @@ class ProductComplentItemViewSet(viewsets.ModelViewSet):
     filterset_fields = ['title']
     def get_queryset(self):
         return  ProductComplementItem.objects.filter()
+    
+class TableViewSet(viewsets.ModelViewSet):
+    serializer_class = TableSerializer
+    permission_classes = (IsAuthenticated,)
+    def get_queryset(self):
+        return  Table.objects.filter(restaurant__owner=self.request.user)

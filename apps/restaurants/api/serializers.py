@@ -2,6 +2,7 @@
 from rest_framework import serializers
 
 from apps.user.models import User
+from apps.financial.models import Bill
 from apps.restaurants.models import( 
     Product, 
     Restaurant, 
@@ -9,7 +10,8 @@ from apps.restaurants.models import(
     Employer,
     ProductCategory,
     ProductComplementCategory,
-    ProductComplementItem
+    ProductComplementItem,
+    Table
 )
 from django.db import transaction
 
@@ -161,3 +163,15 @@ class ProductComplementSerializer(serializers.ModelSerializer):
                 ProductComplementItem.objects.create(complementCategory=instance, **item_data)
 
         return instance
+    
+
+class BillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bill
+        fields = ['id', 'number', 'open', 'client_name']
+
+class TableSerializer(serializers.ModelSerializer):
+    bills = BillSerializer(many=True, read_only=True)
+    class Meta:
+        model = Table
+        fields = '__all__'
