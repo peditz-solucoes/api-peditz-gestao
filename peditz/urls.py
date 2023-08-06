@@ -25,6 +25,9 @@ from apps.restaurants.api.viewsets import (
     ProductComplentViewSet,
     TableViewSet
 )
+from apps.financial.api.viewsets import (
+    CashierViewSet
+)
 
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -45,6 +48,7 @@ router.register(r'product', ProductViewSet, basename='product')
 router.register(r'product-complement', ProductComplentViewSet, basename='product-complement')
 router.register(r'product-complement-item', ProductComplentItemViewSet, basename='product-complement-item')
 router.register(r'tables', TableViewSet, basename='tables')
+router.register(r'cashier', CashierViewSet, basename='cashier')
 
 schema_view = get_schema_view(
     openapi.Info(

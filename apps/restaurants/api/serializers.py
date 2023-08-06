@@ -180,17 +180,27 @@ class TableSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         try:
-            restaurant = Restaurant.objects.get(owner=user)
+            restaurant= Restaurant.objects.get(owner=user)
         except Restaurant.DoesNotExist:
-            raise serializers.ValidationError({"detail":"Este usuário não é dono de nenhum restaurante."})
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         validated_data['restaurant'] = restaurant
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
         user = self.context['request'].user
         try:
-            restaurant = Restaurant.objects.get(owner=user)
+            restaurant= Restaurant.objects.get(owner=user)
         except Restaurant.DoesNotExist:
-            raise serializers.ValidationError({"detail":"Este usuário não é dono de nenhum restaurante."})
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         validated_data['restaurant'] = restaurant
         return super().update(instance, validated_data)

@@ -33,11 +33,14 @@ class Cashier(TimeStampedModel, UUIDModel):
     open = models.BooleanField(_('Open'), default=True)
     identifier = models.CharField(_('Identifier'), max_length=255, blank=True, null=True)
     initial_value = models.DecimalField(_('Initial value'), max_digits=10, decimal_places=2)
+    
     opened_by_name = models.CharField(_('Opened by'), max_length=255, blank=True, null=True)
     opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.PROTECT, related_name='cashier_opened_by')
     closed_by_name = models.CharField(_('Closed by'), max_length=255, blank=True, null=True)
     closed_by = models.ForeignKey(User, verbose_name=_('Closed by'), on_delete=models.PROTECT, related_name='cashier_closed_by', blank=True, null=True)
+    
     closed_at = models.DateTimeField(_('Closed at'), blank=True, null=True)
+    
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='cashiers')
 
 
@@ -49,7 +52,7 @@ class Cashier(TimeStampedModel, UUIDModel):
         if self.pk and self.open == True and self.opened_by is None:
             raise ValidationError(_('A cashier can only be open if there is an associated user who opened it.'))
         open_cashiers = Cashier.objects.filter(restaurant=self.restaurant, open=True)
-        if self.open and open_cashiers.exists():
+        if self.open and open_cashiers.exists() and open_cashiers.first().pk != self.pk:
             raise ValidationError(_('There can only be one open cashier per restaurant.'))
         super().clean()
 
