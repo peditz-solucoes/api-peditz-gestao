@@ -94,5 +94,7 @@ class ProductComplentItemViewSet(viewsets.ModelViewSet):
 class TableViewSet(viewsets.ModelViewSet):
     serializer_class = TableSerializer
     permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['active']
     def get_queryset(self):
         return  Table.objects.filter(restaurant__owner=self.request.user)

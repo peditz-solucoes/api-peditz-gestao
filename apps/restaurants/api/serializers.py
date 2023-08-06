@@ -168,7 +168,7 @@ class ProductComplementSerializer(serializers.ModelSerializer):
 class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
-        fields = ['id', 'number', 'open', 'client_name']
+        fields = ['id', 'number', 'open', 'client_name', 'created']
 
 class TableSerializer(serializers.ModelSerializer):
     bills = BillSerializer(many=True, read_only=True)
