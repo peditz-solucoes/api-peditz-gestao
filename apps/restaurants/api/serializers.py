@@ -175,3 +175,22 @@ class TableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Table
         fields = '__all__'
+        read_only_fields = ('restaurant',)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant = Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Este usuário não é dono de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant = Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Este usuário não é dono de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().update(instance, validated_data)
