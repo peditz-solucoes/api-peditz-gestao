@@ -2,7 +2,7 @@
 from datetime import datetime
 from rest_framework import serializers
 
-from apps.financial.models import Cashier
+from apps.financial.models import Cashier, Bill
 from apps.restaurants.models import Restaurant, Employer
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import RestaurantSerializer
@@ -54,10 +54,10 @@ class CashierSerializer(serializers.ModelSerializer):
         validated_data['opened_by'] = user
         return super().create(
             {
-                'open':validated_data['open'],
-                'identifier':validated_data['identifier'],
-                'initial_value':validated_data['initial_value'],
-                'restaurant':validated_data['restaurant'],
+                'open':validated_data.get('open', True),
+                'identifier':validated_data.get('identifier', None),
+                'initial_value':validated_data.get('initial_value', 0),
+                'restaurant':validated_data.get('restaurant', None),
                 'opened_by':validated_data['opened_by'],
                 'closed_by':validated_data.get('closed_by', None),
                 'closed_at':validated_data.get('closed_at', None)
@@ -89,10 +89,17 @@ class CashierSerializer(serializers.ModelSerializer):
             validated_data['closed_by'] = None
             validated_data['closed_at'] = None
         return super().update(instance, {
-            'open':validated_data['open'],
-            'identifier':validated_data['identifier'],
-            'initial_value':validated_data['initial_value'],
-            'restaurant':validated_data['restaurant'],
+            'open':validated_data.get('open', instance.open),
+            'identifier':validated_data.get('identifier', instance.identifier),
+            'initial_value':validated_data.get('initial_value', instance.initial_value),
+            'restaurant':validated_data.get('restaurant', instance.restaurant),
             'closed_by':validated_data.get('closed_by', None),
             'closed_at':validated_data.get('closed_at', None)
         })
+    
+
+class BillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bill
+        fields = '__all__'
+        read_only_fields = ['tip']

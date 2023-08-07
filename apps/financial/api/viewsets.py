@@ -3,6 +3,7 @@
 from rest_framework import viewsets
 from apps.financial.models import (
     Cashier,
+    Bill,
 )
 from apps.restaurants.models import (
     Employer,
@@ -10,6 +11,7 @@ from apps.restaurants.models import (
 )
 from .serializers import (
     CashierSerializer,
+    BillSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -38,3 +40,9 @@ class CashierViewSet(viewsets.ModelViewSet):
                 return Cashier.objects.none()
         
         return Cashier.objects.filter(restaurant=restaurant)
+    
+class BillViewSet(viewsets.ModelViewSet):
+    queryset = Bill.objects.all()
+    serializer_class = BillSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
