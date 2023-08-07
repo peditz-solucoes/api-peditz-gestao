@@ -6,6 +6,7 @@ from apps.financial.models import Cashier
 from apps.restaurants.models import Restaurant, Employer
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import RestaurantSerializer
+from django.contrib.auth.hashers import check_password
 
 class UserCashierSerializer(UserSerializer):
     class Meta:
@@ -20,9 +21,10 @@ class CashierSerializer(serializers.ModelSerializer):
     opened_by = UserCashierSerializer(read_only=True)
     closed_by = UserCashierSerializer(read_only=True)
     restaurant = RestaurantCashierSerializer(read_only=True)
+    password = serializers.CharField(write_only=True, required=True)
     class Meta:
         model = Cashier
-        fields = ['id', 'open','identifier', 'initial_value', 'closed_at', 'opened_by', 'opened_by_name', 'closed_by', 'closed_by_name', 'restaurant', 'created']
+        fields = ['id', 'open','identifier', 'initial_value', 'closed_at', 'opened_by', 'opened_by_name', 'closed_by', 'closed_by_name', 'restaurant', 'created', 'password']
         read_only_fields = ['restaurant', 'opened_by', 'opened_by_name', 'closed_by', 'closed_by_name', 'closed_at', 'created']
 
     def validate(self, data):
@@ -31,6 +33,9 @@ class CashierSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['request'].user
+
+        if not check_password(validated_data['password'], user.password):
+            raise serializers.ValidationError({"detail":"Senha incorreta."})
         try:
             restaurant= Restaurant.objects.get(owner=user)
         except Restaurant.DoesNotExist:
@@ -47,10 +52,23 @@ class CashierSerializer(serializers.ModelSerializer):
             validated_data['closed_by'] = user
             validated_data['closed_at'] = datetime.now()
         validated_data['opened_by'] = user
-        return super().create(validated_data)
+        return super().create(
+            {
+                'open':validated_data['open'],
+                'identifier':validated_data['identifier'],
+                'initial_value':validated_data['initial_value'],
+                'restaurant':validated_data['restaurant'],
+                'opened_by':validated_data['opened_by'],
+                'closed_by':validated_data.get('closed_by', None),
+                'closed_at':validated_data.get('closed_at', None)
+
+            }
+        )
     
     def update(self, instance, validated_data):
         user = self.context['request'].user
+        if not check_password(validated_data['password'], user.password):
+            raise serializers.ValidationError({"detail":"Senha incorreta."})
         try:
             restaurant= Restaurant.objects.get(owner=user)
         except Restaurant.DoesNotExist:
@@ -70,5 +88,11 @@ class CashierSerializer(serializers.ModelSerializer):
         else:
             validated_data['closed_by'] = None
             validated_data['closed_at'] = None
-        validated_data['opened_by'] = user
-        return super().update(instance, validated_data)
+        return super().update(instance, {
+            'open':validated_data['open'],
+            'identifier':validated_data['identifier'],
+            'initial_value':validated_data['initial_value'],
+            'restaurant':validated_data['restaurant'],
+            'closed_by':validated_data.get('closed_by', None),
+            'closed_at':validated_data.get('closed_at', None)
+        })
