@@ -75,9 +75,8 @@ class Bill(TimeStampedModel, UUIDModel):
         verbose_name = _('Bill')
         verbose_name_plural = _('Bills')
         ordering = ['-created']
-        unique_together = ['number', 'cashier']
 
-    number =  models.IntegerField(_('Number'))
+    number =  models.PositiveBigIntegerField(_('Number'))
     cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='bills')
     table = models.ForeignKey(Table, verbose_name=_('Table'), on_delete=models.SET_NULL, related_name='bills', blank=True, null=True)
     open = models.BooleanField(_('Open'), default=True)
@@ -87,7 +86,7 @@ class Bill(TimeStampedModel, UUIDModel):
 
 
     opened_by_name = models.CharField(_('Opened by'), max_length=255, blank=True, null=True)
-    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.PROTECT, related_name='bill_opened_by')
+    opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.SET_NULL, null=True,  blank=True,related_name='bill_opened_by')
 
     tip = models.DecimalField(_('Tip'), max_digits=10, decimal_places=2, default=0)
 

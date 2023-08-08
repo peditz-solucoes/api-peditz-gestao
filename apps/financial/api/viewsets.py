@@ -46,3 +46,19 @@ class BillViewSet(viewsets.ModelViewSet):
     serializer_class = BillSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['cashier', 'open', 'number', 'opened_by']
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            restaurant = Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                return Bill.objects.none()
+        
+        return Bill.objects.filter(cashier__restaurant=restaurant)

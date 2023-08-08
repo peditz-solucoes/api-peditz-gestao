@@ -1,12 +1,12 @@
 
 from datetime import datetime
 from rest_framework import serializers
-
 from apps.financial.models import Cashier, Bill
 from apps.restaurants.models import Restaurant, Employer
 from apps.user.api.serializers import UserSerializer
-from apps.restaurants.api.serializers import RestaurantSerializer
+from apps.restaurants.api.serializers import RestaurantSerializer, TableSerializer
 from django.contrib.auth.hashers import check_password
+from django.db import IntegrityError
 
 class UserCashierSerializer(UserSerializer):
     class Meta:
@@ -98,8 +98,43 @@ class CashierSerializer(serializers.ModelSerializer):
         })
     
 
+class TableBillSerializer(TableSerializer):
+    class Meta:
+        model = TableSerializer.Meta.model
+        fields = ['id', 'title']
+
 class BillSerializer(serializers.ModelSerializer):
+    opened_by = UserCashierSerializer(read_only=True)
+    table_datail = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Bill
-        fields = '__all__'
-        read_only_fields = ['tip']
+        fields = ['id', 'tip', 'opened_by', 'opened_by_name', 'table', 'cashier', 'created', 'open', 'client_name', 'client_phone', 'number', 'table_datail']
+        read_only_fields = ['tip', 'opened_by', 'opened_by_name', 'cashier']
+
+    def get_table_datail(self, obj):
+        table = obj.table
+        serializer = TableBillSerializer(table)
+        return serializer.data
+
+    def create (self, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant= Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        try:
+            cashier = Cashier.objects.get(open=True, restaurant=restaurant)
+        except Cashier.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
+        validated_data['cashier'] = cashier
+        if Bill.objects.filter(cashier=validated_data['cashier'], open=True, number=validated_data['number']).exists():
+            raise serializers.ValidationError({"detail":"Já existe uma conta aberta com este número neste caixa."})
+        validated_data['opened_by'] = user
+        return super().create(
+            validated_data
+        )
