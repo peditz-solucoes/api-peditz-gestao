@@ -17,7 +17,8 @@ from .serializers import (
     ProductSerializer,
     ProductComplementSerializer,
     ProductComplementItemSerializer,
-    TableSerializer
+    TableSerializer,
+    UserPermissionsSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -40,13 +41,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 class EmployerViewSet(viewsets.ModelViewSet):
-    queryset = Employer.objects.all()
     serializer_class = EmployerSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return Employer.objects.all()  
+    def get_queryset(self): 
         if Restaurant.objects.filter(owner=self.request.user).exists():
             return Employer.objects.filter(restaurant__owner=self.request.user)
         return Employer.objects.filter(user=self.request.user)
@@ -98,3 +96,10 @@ class TableViewSet(viewsets.ModelViewSet):
     filterset_fields = ['active']
     def get_queryset(self):
         return  Table.objects.filter(restaurant__owner=self.request.user)
+    
+class UserPermissionViewSet(viewsets.ModelViewSet):
+    serializer_class = UserPermissionsSerializer
+    permission_classes = (IsAuthenticated,)
+    def get_queryset(self):
+        return  Employer.objects.filter(user=self.request.user)
+    http_method_names = ['get']

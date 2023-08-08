@@ -23,7 +23,8 @@ from apps.restaurants.api.viewsets import (
     ProductCategoryViewSet, 
     ProductViewSet, 
     ProductComplentViewSet,
-    TableViewSet
+    TableViewSet,
+    UserPermissionViewSet
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
@@ -51,6 +52,7 @@ router.register(r'product-complement-item', ProductComplentItemViewSet, basename
 router.register(r'tables', TableViewSet, basename='tables')
 router.register(r'cashier', CashierViewSet, basename='cashier')
 router.register(r'bill', BillViewSet, basename='bill')
+router.register(r'user-permissions', UserPermissionViewSet, basename='user-permissions')
 
 schema_view = get_schema_view(
     openapi.Info(

@@ -11,10 +11,11 @@ from apps.restaurants.models import(
     ProductCategory,
     ProductComplementCategory,
     ProductComplementItem,
+    Sidebar,
     Table
 )
 from django.db import transaction
-
+from apps.user.api.serializers import UserSerializer
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = RestauratCategory
@@ -204,3 +205,18 @@ class TableSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         validated_data['restaurant'] = restaurant
         return super().update(instance, validated_data)
+
+
+class SidebarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sidebar
+        fields = ['id', 'title']
+
+class UserPermissionsSerializer(serializers.ModelSerializer):
+    sidebar_permissions = SidebarSerializer(many=True, read_only=True)
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Employer
+        fields = ['id', 'sidebar_permissions', 'role', 'office', 'user']
+
+    

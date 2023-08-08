@@ -5,6 +5,7 @@ from peditz import settings
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from dj_rest_auth.serializers import LoginSerializer
+from apps.restaurants.models import Employer
 from apps.user.models import User
 from django.utils.translation import gettext_lazy as _
 
@@ -55,8 +56,8 @@ class UserLoginSerializer(LoginSerializer):
         fields = (
             'email',
             'password',
+            'username',
         )
-
     
     def validate(self, attrs):
         username = attrs.get('username')
