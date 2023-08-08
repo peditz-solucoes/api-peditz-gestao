@@ -42,7 +42,6 @@ class CashierViewSet(viewsets.ModelViewSet):
         return Cashier.objects.filter(restaurant=restaurant)
     
 class BillViewSet(viewsets.ModelViewSet):
-    queryset = Bill.objects.all()
     serializer_class = BillSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer
+from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -143,4 +143,9 @@ class ProductComplementCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductComplementItem)
 class ProductComplementItemAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Sidebar)
+class SidebarAdmin(admin.ModelAdmin):
     pass

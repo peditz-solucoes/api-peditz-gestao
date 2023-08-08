@@ -44,6 +44,11 @@ ICMS_MODALIDADE_BASE_CALCULO = (
     ('3', '3 – valor da operação'),
 )
 
+EMPLOYER_ROLE_CHOICES = (
+    ('GERENTE', 'GERENTE'),
+    ('FUNCIONARIO', 'FUNCIONARIO'),
+)
+
 
 class RestauratCategory(TimeStampedModel, UUIDModel):
     class Meta:
@@ -92,6 +97,16 @@ class Printer(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='printers')
     def __str__(self):
         return self.name
+    
+class Sidebar(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Sidebar')
+        verbose_name_plural = _('Sidebars')
+    
+    title = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.title
 
 class Employer(TimeStampedModel, UUIDModel):
     class Meta:
@@ -114,6 +129,9 @@ class Employer(TimeStampedModel, UUIDModel):
         Restaurant, on_delete=models.CASCADE, related_name='employers')
     code = models.CharField(max_length=255, unique=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer')
+    role = models.CharField(max_length=255, choices=EMPLOYER_ROLE_CHOICES, default='FUNCIONARIO')
+
+    sidebar_permissions = models.ManyToManyField(Sidebar, blank=True)
 
     def __str__(self):
         return self.user.first_name
@@ -240,3 +258,5 @@ class Catalog(TimeStampedModel, UUIDModel):
 
     def __str__(self):
         return self.title
+    
+
