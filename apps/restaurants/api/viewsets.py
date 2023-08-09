@@ -76,11 +76,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ['product_category', 'active', 'listed','printer', 'title']
     def get_queryset(self):
         user = self.request.user
-        if user.employer is not None:
+        try:
             return  Product.objects.filter(product_category__restaurant=user.employer.restaurant)
-        if user.restaurants:
-            return  Product.objects.filter(product_category__restaurant=user.restaurants)
-        return Product.objects.none()
+        except AttributeError:
+            try:
+                return  Product.objects.filter(product_category__restaurant=user.restaurants)
+            except AttributeError:
+                return Product.objects.none()
 
 class ProductComplentViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementSerializer
@@ -105,11 +107,13 @@ class TableViewSet(viewsets.ModelViewSet):
     filterset_fields = ['active']
     def get_queryset(self):
         user = self.request.user
-        if user.employer is not None:
+        try:
             return  Table.objects.filter(restaurant=user.employer.restaurant)
-        if user.restaurants:
-            return  Table.objects.filter(restaurant=user.restaurants)
-        return Table.objects.none()
+        except AttributeError:
+            try:
+                return  Table.objects.filter(restaurant=user.restaurants)
+            except AttributeError:                
+                return Table.objects.none()
     
 class UserPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = UserPermissionsSerializer
