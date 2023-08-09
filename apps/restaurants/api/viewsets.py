@@ -49,7 +49,7 @@ class EmployerViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.restaurants:
             return user.restaurants.employers.all()
-        if user.employer:
+        if user.employer is not None:
             return Employer.objects.filter(user=user)
         return Employer.objects.none()
     
@@ -76,7 +76,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ['product_category', 'active', 'listed','printer', 'title']
     def get_queryset(self):
         user = self.request.user
-        if user.employer:
+        if user.employer is not None:
             return  Product.objects.filter(product_category__restaurant=user.employer.restaurant)
         if user.restaurants:
             return  Product.objects.filter(product_category__restaurant=user.restaurants)
@@ -105,7 +105,7 @@ class TableViewSet(viewsets.ModelViewSet):
     filterset_fields = ['active']
     def get_queryset(self):
         user = self.request.user
-        if user.employer:
+        if user.employer is not None:
             return  Table.objects.filter(restaurant=user.employer.restaurant)
         if user.restaurants:
             return  Table.objects.filter(restaurant=user.restaurants)
