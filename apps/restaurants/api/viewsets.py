@@ -43,6 +43,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 class EmployerViewSet(viewsets.ModelViewSet):
     serializer_class = EmployerSerializer
     permission_classes = (IsAuthenticated,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self): 
         if Restaurant.objects.filter(owner=self.request.user).exists():

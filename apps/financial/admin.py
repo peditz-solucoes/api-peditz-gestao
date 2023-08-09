@@ -1,11 +1,12 @@
 from django.contrib import admin
-from .models import Cashier, Bill, Order, PaymentMethod, Payment, OrderComplement
+from .models import Cashier, Bill, Order, PaymentMethod, Payment, OrderComplement, OrderComplementItem
 # Register your models here.
 
 
 class OderComplementsFieldsInline(admin.TabularInline):
     model = OrderComplement
-    readonly_fields = ['unit_price', 'complement_item_title', 'total']
+class OderComplementsItemsFieldsInline(admin.TabularInline):
+    model = OrderComplementItem
 
 class OderFieldsInline(admin.TabularInline):
     model = Order
@@ -33,4 +34,8 @@ class PaymentAdmin(admin.ModelAdmin):
     pass
 @admin.register(OrderComplement)
 class OrderComplementAdmin(admin.ModelAdmin):
+    inlines = [OderComplementsItemsFieldsInline]
+
+@admin.register(OrderComplementItem)
+class OrderComplementItemAdmin(admin.ModelAdmin):
     pass

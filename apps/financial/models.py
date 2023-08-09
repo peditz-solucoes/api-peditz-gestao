@@ -5,7 +5,7 @@ from model_utils.models import (
     UUIDModel,
 )
 from apps.user.models import User
-from apps.restaurants.models import Restaurant, Table, Product, ProductComplementItem
+from apps.restaurants.models import Restaurant, Table, Product, ProductComplementCategory, ProductComplementItem
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
@@ -116,34 +116,90 @@ class Order(TimeStampedModel, UUIDModel):
 
     note = models.TextField(_('Note'), blank=True, null=True)
     order_number = models.PositiveIntegerField(_('Order Number'), blank=True, null=True)
-
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
     def __str__(self):
-        return f'{self.product.title}'
+        return f'{self.product_title}'
+    
+    def save(self, *args, **kwargs):
+        if self.product:
+            self.product_title = self.product.title
+            self.unit_price = self.product.price
+        if self.pk is None:
+            self.total = self.unit_price * self.quantity
+            max_order_number = Order.objects.filter(bill__cashier__restaurant=self.bill.cashier.restaurant).aggregate(Max('order_number'))['order_number__max']
+            if max_order_number is None:
+                self.order_number = 1
+            else:
+                self.order_number = max_order_number + 1
+
+        super().save(*args, **kwargs)
     
 class OrderComplement(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Order Complement')
-        verbose_name_plural = _('Order Complements')
+        verbose_name_plural = _('Order Complement')
         ordering = ['-created']
-        unique_together = ['order', 'complement_item']
+        unique_together = ['order', 'complement_group']
 
     order = models.ForeignKey(Order, verbose_name=_('Order'), on_delete=models.CASCADE, related_name='complements')
-    complement_item = models.ForeignKey(ProductComplementItem, verbose_name=_('Complement Item'), on_delete=models.SET_NULL, related_name='order_complements', null=True, blank=True)
-    complement_item_title = models.CharField(_('Complement Item title'), max_length=255, default='', blank=True)
+    complement_group = models.ForeignKey(ProductComplementCategory, verbose_name=_('Complement Item'), on_delete=models.SET_NULL, related_name='order_complements', null=True, blank=True)
+    complement_group_title = models.CharField(_('Complement Item title'), max_length=255, default='', blank=True)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
+
+    def save(self, *args, **kwargs):
+        if self.complement_group:
+            self.complement_group_title = self.complement_group.title
+        super().save(*args, **kwargs)
+
+    def update_total(self):
+        items = self.items.all()
+        if not items:
+            return
+        if self.complement_group.business_rules == 'maior':
+            self.total = max(item.total for item in items)
+        elif self.complement_group.business_rules == 'media':
+            self.total = sum(item.total for item in items) / len(items)
+        elif self.complement_group.business_rules == 'soma':
+            self.total = sum(item.total for item in items)
+        self.save()
+        all_groups = self.order.complements.all()
+        if all_groups:
+            self.order.total = sum(group.total for group in all_groups) + self.order.unit_price
+            self.order.save()
+
+    def __str__(self):
+        return f'{self.complement_group_title} complemento do pedido {self.order.id}'
+    
+class OrderComplementItem(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Order Complement Item')
+        verbose_name_plural = _('Order Complement Items')
+        ordering = ['-created']
+        unique_together = ['order_complement', 'complement']
+
+    order_complement = models.ForeignKey(OrderComplement, verbose_name=_('Order Complement'), on_delete=models.CASCADE, related_name='items')
+    complement = models.ForeignKey(ProductComplementItem, verbose_name=_('Complement'), on_delete=models.SET_NULL, related_name='order_complements', null=True, blank=True)
+    complement_title = models.CharField(_('Complement title'), max_length=255, default='', blank=True)
 
     quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3, default=1)
     unit_price = models.DecimalField(_('Unit Price'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
     total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
 
     def save(self, *args, **kwargs):
-        if self.complement_item:
-            self.complement_item_title = self.complement_item.title
-            self.unit_price = self.complement_item.price
-        self.total = self.quantity * self.unit_price
+        if self.complement:
+            self.complement_title = self.complement.title
+            self.unit_price = self.complement.price
+            self.total = self.unit_price * self.quantity
+
+        if self.order_complement.complement_group:
+            if self.quantity + len(self.order_complement.items.all()) > self.order_complement.complement_group.max_value:
+                raise ValidationError({
+                    'detail': f'Você pode adicionar no máximo {self.order_complement.complement_group.max_value} items'}, code='400')
         super().save(*args, **kwargs)
+        self.order_complement.update_total()
 
     def __str__(self):
-        return f'{self.order.product.title} | {self.complement_item.complementCategory.title} | {self.complement_item_title}'
+        return f'{self.complement_title} complemento do pedido {self.order_complement.order.id}'
 
 class PaymentMethod(TimeStampedModel, UUIDModel):
     class Meta:

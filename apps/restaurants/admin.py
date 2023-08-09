@@ -137,9 +137,12 @@ class CatalogAdmin(admin.ModelAdmin):
 class PrinterAdmin(admin.ModelAdmin):
     pass
 
+class ProductComplementItemInline(admin.TabularInline):
+    model = ProductComplementItem
+
 @admin.register(ProductComplementCategory)
 class ProductComplementCategoryAdmin(admin.ModelAdmin):
-    pass
+    inlines = [ProductComplementItemInline,]
 
 @admin.register(ProductComplementItem)
 class ProductComplementItemAdmin(admin.ModelAdmin):
