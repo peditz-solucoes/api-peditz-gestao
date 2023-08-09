@@ -1,5 +1,16 @@
 from django.contrib import admin
-from .models import Cashier, Bill, Order, PaymentMethod, Payment, OrderComplement, OrderComplementItem
+from .models import (
+    Cashier, 
+    Bill,
+    Order,
+    PaymentMethod,
+    Payment,
+    OrderComplement,
+    OrderComplementItem,
+    OrderStatus,
+    OrderGroup,
+    TakeoutOrder,
+)
 # Register your models here.
 
 
@@ -19,7 +30,7 @@ class CashierAdmin(admin.ModelAdmin):
 
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
-    inlines = [OderFieldsInline]
+    pass
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -38,4 +49,16 @@ class OrderComplementAdmin(admin.ModelAdmin):
 
 @admin.register(OrderComplementItem)
 class OrderComplementItemAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(OrderStatus)
+class OrderStatusAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(OrderGroup)
+class OrderGroupAdmin(admin.ModelAdmin):
+    readonly_fields = ['id', 'order_number', 'collaborator_name']
+
+@admin.register(TakeoutOrder)
+class TakeoutOrderAdmin(admin.ModelAdmin):
     pass

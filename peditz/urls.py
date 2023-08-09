@@ -28,7 +28,8 @@ from apps.restaurants.api.viewsets import (
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
-    BillViewSet
+    BillViewSet,
+    OrderGroupViewSet
 )
 
 from drf_yasg.views import get_schema_view
@@ -53,6 +54,7 @@ router.register(r'tables', TableViewSet, basename='tables')
 router.register(r'cashier', CashierViewSet, basename='cashier')
 router.register(r'bill', BillViewSet, basename='bill')
 router.register(r'user-permissions', UserPermissionViewSet, basename='user-permissions')
+router.register(r'order', OrderGroupViewSet, basename='order')
 
 schema_view = get_schema_view(
     openapi.Info(

@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'apps.financial',
     'apps.inventory',
     'apps.tax_module',
-
+    'apps.delivery',
     # Contrib Apps
     'rest_framework',
     'rest_framework.authtoken',

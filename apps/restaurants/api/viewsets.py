@@ -34,7 +34,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.is_superuser:
-            return Restaurant.objects.all()    
+            return Restaurant.objects.all() 
         return Restaurant.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer):
@@ -45,10 +45,13 @@ class EmployerViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def get_queryset(self): 
-        if Restaurant.objects.filter(owner=self.request.user).exists():
-            return Employer.objects.filter(restaurant__owner=self.request.user)
-        return Employer.objects.filter(user=self.request.user)
+    def get_queryset(self):
+        user = self.request.user
+        if user.restaurants:
+            return user.restaurants.employers.all()
+        if user.employer:
+            return Employer.objects.filter(user=user)
+        return Employer.objects.none()
     
     def create(self, request, *args, **kwargs):
         if not Restaurant.objects.filter(owner=request.user).exists():
@@ -64,8 +67,7 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
         return ProductCategory.objects.filter(restaurant__owner=self.request.user) 
 
     def perform_create(self, serializer):
-        restaurant = Restaurant.objects.get(owner=self.request.user)
-        serializer.save(restaurant=restaurant)
+        serializer.save(restaurant=self.request.user.restaurants)
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
@@ -73,7 +75,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product_category', 'active', 'listed','printer', 'title']
     def get_queryset(self):
-        return  Product.objects.filter(product_category__restaurant__owner=self.request.user)
+        user = self.request.user
+        if user.employer:
+            return  Product.objects.filter(product_category__restaurant=user.employer.restaurant)
+        if user.restaurants:
+            return  Product.objects.filter(product_category__restaurant=user.restaurants)
+        return Product.objects.none()
+
 class ProductComplentViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementSerializer
     permission_classes = (IsAuthenticated,)
@@ -96,7 +104,12 @@ class TableViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['active']
     def get_queryset(self):
-        return  Table.objects.filter(restaurant__owner=self.request.user)
+        user = self.request.user
+        if user.employer:
+            return  Table.objects.filter(restaurant=user.employer.restaurant)
+        if user.restaurants:
+            return  Table.objects.filter(restaurant=user.restaurants)
+        return Table.objects.none()
     
 class UserPermissionViewSet(viewsets.ModelViewSet):
     serializer_class = UserPermissionsSerializer

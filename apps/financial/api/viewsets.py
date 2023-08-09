@@ -4,18 +4,14 @@ from rest_framework import viewsets
 from apps.financial.models import (
     Cashier,
     Bill,
-)
-from apps.restaurants.models import (
-    Employer,
-    Restaurant,
+    OrderGroup,
 )
 from .serializers import (
     CashierSerializer,
     BillSerializer,
+    OrderGroupSerialier,
 )
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 
 
@@ -29,17 +25,11 @@ class CashierViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        try:
-            restaurant = Restaurant.objects.get(owner=user)
-        except Restaurant.DoesNotExist:
-            restaurant = None
-            try:
-                employer = Employer.objects.get(user=user)
-                restaurant = employer.restaurant
-            except Employer.DoesNotExist:
-                return Cashier.objects.none()
-        
-        return Cashier.objects.filter(restaurant=restaurant)
+        if user.restaurants:
+            return Cashier.objects.filter(restaurant=user.restaurants)
+        if user.employer:
+            return Cashier.objects.filter(restaurant=user.employer.restaurant)
+        return Cashier.objects.none()
     
 class BillViewSet(viewsets.ModelViewSet):
     serializer_class = BillSerializer
@@ -50,14 +40,20 @@ class BillViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        try:
-            restaurant = Restaurant.objects.get(owner=user)
-        except Restaurant.DoesNotExist:
-            restaurant = None
-            try:
-                employer = Employer.objects.get(user=user)
-                restaurant = employer.restaurant
-            except Employer.DoesNotExist:
-                return Bill.objects.none()
-        
-        return Bill.objects.filter(cashier__restaurant=restaurant)
+        if user.restaurants:
+            return Bill.objects.filter(cashier__restaurant=user.restaurants)
+        if user.employer:
+            return Bill.objects.filter(cashier__restaurant=user.employer.restaurant)
+        return Bill.objects.none()
+    
+class OrderGroupViewSet(viewsets.ModelViewSet):
+    serializer_class = OrderGroupSerialier
+    permission_classes = (IsAuthenticated,)
+    queryset = OrderGroup.objects.all().order_by('created')
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.employer:
+            restaurant = user.employer.restaurant
+            return OrderGroup.objects.filter(restaurant=restaurant)
+        return OrderGroup.objects.none()
