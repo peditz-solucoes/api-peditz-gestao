@@ -300,7 +300,7 @@ class OrderComplementItem(TimeStampedModel, UUIDModel):
             self.total = self.unit_price * self.quantity
 
         if self.order_complement.complement_group:
-            if self.quantity + len(self.order_complement.items.all()) > self.order_complement.complement_group.max_value:
+            if int(sum(item.quantity for item in self.order_complement.items.all())) > self.order_complement.complement_group.max_value:
                 raise ValidationError({
                     'detail': f'Você pode adicionar no máximo {self.order_complement.complement_group.max_value} items'}, code='400')
         super().save(*args, **kwargs)

@@ -135,35 +135,27 @@ class ProductSerializer(serializers.ModelSerializer):
 class ProductComplementItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductComplementItem
-        fields = '__all__'
+        fields = [
+            'id',
+            'title',
+            'order',
+            'price',
+            'min_value',
+            'max_value',
+        ]
 
 
 class ProductComplementSerializer(serializers.ModelSerializer):
-    complement_items = ProductComplementItemSerializer(many=True)
+    complement_items = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProductComplementCategory
         fields = ['id', 'title', 'order', 'active', 'input_type', 'business_rules', 'max_value', 'min_value', 'product', 'complement_items']
     
-    def update(self, instance, validated_data):
-        complement_items_data = validated_data.pop('complement_items', [])
-
-        instance = super().update(instance, validated_data)
-
-        for item_data in complement_items_data:
-            item_id = item_data.get('id', None)
-            if item_id:
-                # Se o item id existe, atualiza o item
-                item_instance, created = ProductComplementItem.objects.get_or_create(id=item_id, complementCategory=instance)
-                for attr, value in item_data.items():
-                    setattr(item_instance, attr, value)
-                item_instance.save()
-            else:
-                # Se o item id não existe, cria um novo item
-                item_data.pop('complementCategory', None)  # Remove 'complementCategory' de 'item_data'
-                ProductComplementItem.objects.create(complementCategory=instance, **item_data)
-
-        return instance
+    def get_complement_items(self, obj):
+        items = obj.complement_items.filter(active=True)
+        serializer = ProductComplementItemSerializer(items, many=True)
+        return serializer.data
     
 
 class BillSerializer(serializers.ModelSerializer):

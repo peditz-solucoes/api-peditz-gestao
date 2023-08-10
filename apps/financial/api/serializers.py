@@ -168,7 +168,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
     collaborator = EmployerOrderSerializer(read_only=True)
     bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.all(), source='bill')
     operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True)
-    order_items = serializers.JSONField(write_only=True)
+    order_items = serializers.JSONField()
     class Meta:
         model = OrderGroup
         fields = [
@@ -220,21 +220,35 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'type':'BILL',
             'total':0,
         })
-        if orders is None:
+        order_items_output = []
+        if orders is None or len(orders) == 0:
             raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
         for order in orders:
             order_db = None
+            order_items_output.append({
+                'product_id':  order['product_id'],
+                'notes': order.get('notes', ''),
+                'quantity': order['quantity'],
+                'items': [],
+            })
             try: 
                 product = Product.objects.get(id=order['product_id'])
                 order_db = Order.objects.create(
                     product=product,
+                    note=order.get('notes', ''),
                     quantity=order['quantity'],
                     order_group=order_group,
                     product_title=product.title,
+                    total=float(product.price)* float(order['quantity']),
                 )
                 order_db.save()
                 if len(order['complements'])> 0:
                     for complement in order['complements']:
+                        order_items_output[-1]['items'].append({
+                            'complement_id': complement['complement_id'],
+                            'complement_title': complement['complement_title'],
+                            'items': [],
+                        })
                         if len(complement['items']) > 0:
                             try:
                                 complement_group = ProductComplementCategory.objects.get(id=complement['complement_id'])
@@ -247,6 +261,11 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                             complement_db.save()
                             if len(complement['items']):
                                 for item in complement['items']:
+                                    order_items_output[-1]['items'][-1]['items'].append({
+                                        'item_id': item['item_id'],
+                                        'item_title': item['item_title'],
+                                        'quantity': item['quantity'],
+                                    })
                                     try:
                                         complement_item = ProductComplementItem.objects.get(id=item['item_id'])
                                     except ProductComplementItem.DoesNotExist:
@@ -261,4 +280,5 @@ class OrderGroupSerialier(serializers.ModelSerializer):
 
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
+        order_group.order_items = order_items_output
         return order_group
