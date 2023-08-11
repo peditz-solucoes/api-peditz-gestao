@@ -29,6 +29,7 @@ from apps.restaurants.api.viewsets import (
 from apps.financial.api.viewsets import (
     CashierViewSet,
     BillViewSet,
+    ListPaymentGroupViewSet,
     OrderGroupViewSet,
     OrderGroupListViewSet,
     DeleteOrderViewSet,
@@ -63,6 +64,7 @@ router.register(r'order-list', OrderGroupListViewSet, basename='order-list')
 router.register(r'order-delete', DeleteOrderViewSet, basename='order-delete')
 router.register(r'payment-method', PaymentMethodViewSet, basename='payment-method')
 router.register(r'payment', PaymentGroupViewSet, basename='payment')
+router.register(r'list-payment', ListPaymentGroupViewSet, basename='list-payment')
 
 schema_view = get_schema_view(
     openapi.Info(

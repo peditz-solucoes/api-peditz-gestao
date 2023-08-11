@@ -11,6 +11,7 @@ from apps.financial.models import (
 from .serializers import (
     CashierSerializer,
     BillSerializer,
+    ListPaymentsGroupsSerializer,
     OrderGroupSerialier,
     OrderGroupListSerializer,
     DeleteOrderSerializer,
@@ -113,6 +114,25 @@ class PaymentGroupViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentGroupSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            restaurant = user.employer.restaurant
+            return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+                return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+            except AttributeError:
+                return PaymentGroup.objects.none()
+            
+class ListPaymentGroupViewSet(viewsets.ModelViewSet):
+    serializer_class = ListPaymentsGroupsSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['get']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['cashier', 'type']
 
     def get_queryset(self):
         user = self.request.user

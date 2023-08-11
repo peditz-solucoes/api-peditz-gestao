@@ -404,3 +404,35 @@ class PaymentGroupSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
         return payment_group
+    
+
+class PaymentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__' 
+
+class BillOnPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bill
+        fields = [
+            'id',
+            'number'
+        ]
+
+class PaymentMethodListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields= [
+            'payment_method_title',
+            'value',
+            'note',
+            'created',
+            'id'
+    ]
+
+class ListPaymentsGroupsSerializer(serializers.ModelSerializer):
+    payments = PaymentMethodListSerializer(many=True, read_only=True)
+    bills = BillOnPaymentSerializer(many=True, read_only=True)
+    class Meta:
+        model = PaymentGroup
+        fields = '__all__'
