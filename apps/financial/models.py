@@ -1,3 +1,4 @@
+from typing import Any, Dict, Tuple
 from django.db import models
 from django.dispatch import receiver
 from model_utils.models import (
@@ -171,6 +172,8 @@ class OrderGroup(TimeStampedModel, UUIDModel):
     @transaction.atomic
     def update_total(self):
         self.total = self.orders.aggregate(Sum('total'))['total__sum']
+        if self.total is None:
+            self.total = 0
         self.save()
 
     def __str__(self):
@@ -229,7 +232,7 @@ class Order(TimeStampedModel, UUIDModel):
     
 
     def __str__(self):
-        return f'{self.product_title}'
+        return f'pedido {self.order_group.order_number} - {self.product_title}'
     
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -238,6 +241,13 @@ class Order(TimeStampedModel, UUIDModel):
             self.unit_price = self.product.price
         super().save(*args, **kwargs)
         self.order_group.update_total()
+
+    @transaction.atomic
+    def delete(self, using = None, keep_parents = False):
+        super().delete(using, keep_parents)
+        self.order_group.update_total()
+        if self.order_group.type == 'BILL' and self.order_group.orders.count() == 0:
+            self.order_group.delete()
     
 class OrderComplement(TimeStampedModel, UUIDModel):
     class Meta:

@@ -58,6 +58,7 @@ class OrderStatusAdmin(admin.ModelAdmin):
 @admin.register(OrderGroup)
 class OrderGroupAdmin(admin.ModelAdmin):
     readonly_fields = ['id', 'order_number', 'collaborator_name']
+    inlines = [OderFieldsInline]
 
 @admin.register(TakeoutOrder)
 class TakeoutOrderAdmin(admin.ModelAdmin):

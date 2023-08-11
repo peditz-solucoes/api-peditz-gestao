@@ -326,3 +326,26 @@ class OrderGroupListSerializer(serializers.ModelSerializer):
             'type',
             'orders',
         ]
+
+class DeleteOrderSerializer(serializers.ModelSerializer):
+    operator_code = serializers.CharField(write_only=True)
+    order_id = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all(), write_only=True)
+    message = serializers.CharField(read_only=True)
+    class Meta:
+        model = Order
+        fields = ['id', 'operator_code', 'order_id', 'message']
+
+    def create(self, validated_data):
+        try:
+            employer = Employer.objects.get(code=validated_data.get('operator_code', None)) 
+        except Employer.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Código de operador inválido."})
+        print(employer)
+        try:
+            order = Order.objects.get(id=validated_data.get('order_id', None).id)
+        except Order.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Pedido não encontrado."})
+        order.delete()
+
+        validated_data['message'] = 'Pedido excluído com sucesso.'
+        return validated_data
