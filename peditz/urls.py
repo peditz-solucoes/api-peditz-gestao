@@ -31,7 +31,8 @@ from apps.financial.api.viewsets import (
     BillViewSet,
     OrderGroupViewSet,
     OrderGroupListViewSet,
-    DeleteOrderViewSet
+    DeleteOrderViewSet,
+    PaymentMethodViewSet
 )
 
 from drf_yasg.views import get_schema_view
@@ -59,6 +60,7 @@ router.register(r'user-permissions', UserPermissionViewSet, basename='user-permi
 router.register(r'order', OrderGroupViewSet, basename='order')
 router.register(r'order-list', OrderGroupListViewSet, basename='order-list')
 router.register(r'order-delete', DeleteOrderViewSet, basename='order-delete')
+router.register(r'payment-method', PaymentMethodViewSet, basename='payment-method')
 
 schema_view = get_schema_view(
     openapi.Info(

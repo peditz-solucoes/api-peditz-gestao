@@ -323,7 +323,7 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Payment Method')
         verbose_name_plural = _('Payment Methods')
-        unique_together = ['restaurant', 'title']
+        unique_together = ['restaurant', 'title', 'method']
     method = models.CharField(_('Method'), max_length=255, choices=PAYMENT_METHODS, default=PAYMENT_METHODS[0][0])
     title = models.CharField(_('Title'), max_length=255, blank=True, null=True)
     active = models.BooleanField(_('Active'), default=True)
@@ -334,7 +334,7 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='payment_methods')
 
     def save(self, *args, **kwargs):
-        if self.method:
+        if self.method and self.method != '99':
             self.title = dict(PAYMENT_METHODS)[self.method]
         super().save(*args, **kwargs)
 

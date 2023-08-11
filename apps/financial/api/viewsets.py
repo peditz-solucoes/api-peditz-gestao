@@ -5,13 +5,15 @@ from apps.financial.models import (
     Cashier,
     Bill,
     OrderGroup,
+    PaymentMethod
 )
 from .serializers import (
     CashierSerializer,
     BillSerializer,
     OrderGroupSerialier,
     OrderGroupListSerializer,
-    DeleteOrderSerializer
+    DeleteOrderSerializer,
+    PaymentsMethodSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -87,3 +89,19 @@ class DeleteOrderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return OrderGroup.objects.none()
+    
+class PaymentMethodViewSet(viewsets.ModelViewSet):
+    serializer_class = PaymentsMethodSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            restaurant = user.employer.restaurant
+            return PaymentMethod.objects.filter(restaurant=restaurant)
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+                return PaymentMethod.objects.filter(restaurant=restaurant)
+            except AttributeError:
+                return PaymentMethod.objects.none()

@@ -1,7 +1,7 @@
 
 from datetime import datetime
 from rest_framework import serializers
-from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem
+from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
@@ -349,3 +349,8 @@ class DeleteOrderSerializer(serializers.ModelSerializer):
 
         validated_data['message'] = 'Pedido excluído com sucesso.'
         return validated_data
+    
+class PaymentsMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentMethod
+        fields = '__all__'
