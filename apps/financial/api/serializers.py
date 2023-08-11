@@ -282,3 +282,47 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
         order_group.order_items = order_items_output
         return order_group
+
+class ComplementItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderComplementItem
+        fields = [
+            'id',
+            'complement_title',
+            'quantity',
+            'unit_price',
+            'total',
+        ]
+class ComplementSerializer(serializers.ModelSerializer):
+    items = ComplementItemSerializer(many=True, read_only=True)
+    class Meta:
+        model = OrderComplement
+        fields = ['complement_group_title', 'items', 'id', 'total', ]
+
+class OrderSerializer(serializers.ModelSerializer):
+    complements = ComplementSerializer(many=True, read_only=True)
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'product_title',
+            'quantity',
+            'unit_price',
+            'note',
+            'total',
+            'complements'
+        ]
+
+class OrderGroupListSerializer(serializers.ModelSerializer):
+    orders = OrderSerializer(many=True, read_only=True)
+    class Meta:
+        model = OrderGroup
+        fields = [
+            'id',
+            'created',
+            'collaborator_name',
+            'total',
+            'order_number',
+            'type',
+            'orders',
+        ]
