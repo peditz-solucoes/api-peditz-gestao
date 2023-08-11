@@ -1,12 +1,11 @@
 
 from datetime import datetime
 from rest_framework import serializers
-from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod
+from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
 from django.contrib.auth.hashers import check_password
-from django.db import IntegrityError
 from django.db import transaction
 
 class UserCashierSerializer(UserSerializer):
@@ -354,3 +353,54 @@ class PaymentsMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentMethod
         fields = '__all__'
+
+
+class PaymentGroupSerializer(serializers.ModelSerializer):
+    pyments_methods = serializers.JSONField(write_only=True)
+    bills = serializers.JSONField(write_only=True)
+    class Meta:
+        model = PaymentGroup
+        fields = '__all__'
+        read_only_fields = ['tip', 'total', 'cashier', 'type']
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context['request'].user
+        cashier = None
+        try: 
+            cashier = Cashier.objects.get(restaurant=user.employer.restaurant, open=True)
+        except Cashier.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Caixa não encontrado."})
+        payment_group = PaymentGroup.objects.create(
+            tip= 0,
+            total= 0,
+            type= 'BILL',
+            cashier= cashier,
+        )
+        bills = validated_data.get('bills', None)
+        if bills is None or len(bills) == 0:
+            raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
+        for bill in bills:
+            try:
+                bill_db = Bill.objects.get(id=bill)
+                bill_db.payment_group = payment_group
+                bill_db.open = False
+                bill_db.save()
+            except Bill.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Conta não encontrada."})
+            
+        if len(validated_data.get('pyments_methods', [])) > 0:
+            for payment_method in validated_data.get('pyments_methods', []):
+                try:
+                    method = PaymentMethod.objects.get(id=payment_method['id'])
+                except PaymentMethod.DoesNotExist:
+                    raise serializers.ValidationError({"detail":"Forma de pagamento não encontrada."})
+                payment = Payment.objects.create(
+                    payment_group=payment_group,
+                    payment_method=method,
+                    value=payment_method['value'],
+                )
+                payment.save()
+        else:
+            raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
+        return payment_group

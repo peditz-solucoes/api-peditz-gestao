@@ -1,10 +1,7 @@
-from typing import Any, Dict, Tuple
 from django.db import models
-from django.dispatch import receiver
 from model_utils.models import (
     TimeStampedModel,
     UUIDModel,
-    StatusField,
 )
 from apps.user.models import User
 from apps.restaurants.models import Employer, Restaurant, Table, Product, ProductComplementCategory, ProductComplementItem
@@ -13,7 +10,6 @@ from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import Sum, Max
 from django.db import transaction
-from django.db.models.signals import post_save
 from localflavor.br.models import BRCPFField
 
 # Create your models here.
@@ -27,7 +23,11 @@ PAYMENT_METHODS = (
     ('11', 'Vale Refeição'),
     ('99', 'Outros'),
 )
-
+ORDER_GOUP_TYPES = (
+    ('DELIVERY', 'DELIVERY'),
+    ('TAKEOUT', 'TAKEOUT'),
+    ('BILL', 'BILL'),
+)
 class Cashier(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Cashier')
@@ -73,6 +73,30 @@ class Cashier(TimeStampedModel, UUIDModel):
     def __str__(self):
         return f'{self.identifier} - {self.restaurant.title} - {self.created}'
     
+class PaymentGroup(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Payment Group')
+        verbose_name_plural = _('Payments Groups')
+        ordering = ['-created']
+
+    type = models.CharField(_('Type'), max_length=255, choices=ORDER_GOUP_TYPES)
+    tip = models.DecimalField(_('Tip'), max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, default=0)
+    cashier  = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='payment_groups')
+
+    def update_total(self):
+        self.total = self.payments.aggregate(total=Sum('value'))['total']
+        related_bills = self.bills.all()
+        bills_order_group_total = OrderGroup.objects.filter(bill__in=related_bills).aggregate(total=Sum('total'))['total'] or 0
+        if bills_order_group_total and bills_order_group_total < self.total:
+            self.tip = self.total - bills_order_group_total
+        else:
+            self.tip = 0
+        self.save()
+
+    def __str__(self):
+        return f'{self.type} - {self.created}'
+    
 
 class Bill(TimeStampedModel, UUIDModel):
     class Meta:
@@ -93,7 +117,8 @@ class Bill(TimeStampedModel, UUIDModel):
     opened_by = models.ForeignKey(User, verbose_name=_('Opened by'), on_delete=models.SET_NULL, null=True,  blank=True,related_name='bill_opened_by')
 
     tip = models.DecimalField(_('Tip'), max_digits=10, decimal_places=2, default=0)
-
+    payment_group = models.ForeignKey(PaymentGroup, verbose_name=_('Payment Group'), on_delete=models.SET_NULL, related_name='bills', blank=True, null=True)
+    
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.opened_by:
@@ -104,11 +129,7 @@ class Bill(TimeStampedModel, UUIDModel):
     def __str__(self):
         return f'COMANDA {self.number} - CAIXA {self.cashier.identifier}'
 
-ORDER_GOUP_TYPES = (
-    ('DELIVERY', 'DELIVERY'),
-    ('TAKEOUT', 'TAKEOUT'),
-    ('BILL', 'BILL'),
-)
+
 
 TAKEOUT_STATUS = (
     ('OPEN', 'OPEN'),
@@ -144,6 +165,7 @@ class OrderGroup(TimeStampedModel, UUIDModel):
     collaborator = models.ForeignKey(Employer, verbose_name=_('Colaborator'), on_delete=models.SET_NULL, related_name='orders', null=True, blank=True)
     collaborator_name = models.CharField(_('Colaborator name'), max_length=255, blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='order_groups')
+    
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.type == 'BILL' and self.bill is None:
@@ -162,7 +184,6 @@ class OrderGroup(TimeStampedModel, UUIDModel):
             if self.collaborator:
                 self.collaborator_name = self.collaborator.user.get_full_name()
             max_order_number = OrderGroup.objects.filter(restaurant=self.restaurant).aggregate(Max('order_number'))['order_number__max']
-            print(max_order_number)
             if max_order_number is None:
                 self.order_number = 1
             else:
@@ -190,6 +211,7 @@ class TakeoutOrder(TimeStampedModel, UUIDModel):
     cpf = BRCPFField(verbose_name=_('CPF'), blank=True, null=True)
     status = models.CharField(_('Status'), max_length=255, choices=TAKEOUT_STATUS, default='OPEN')
     order_group = models.OneToOneField(OrderGroup, verbose_name=_('Order Group'), on_delete=models.CASCADE, related_name='takeout_order')
+    cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='takeout_orders')
     def __str__(self):
         return f'{self.order_group.order_number}'
     
@@ -341,34 +363,27 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     def __str__(self):
         return f'{self.title}'
 
+
 class Payment(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Payment')
         verbose_name_plural = _('Payments')
-
-    bill = models.ForeignKey(Bill, verbose_name=_('Bill'), on_delete=models.CASCADE, related_name='payments')
+        ordering = ['-created']
 
     payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.PROTECT, related_name='payments')
     payment_method_title = models.CharField(_('Payment Method title'), max_length=255)
-    
     value = models.DecimalField(_('Value'), max_digits=10, decimal_places=2)
-    
     note = models.TextField(_('Note'), blank=True, null=True)
+    payment_group = models.ForeignKey(PaymentGroup, verbose_name=_('Payment Group'), on_delete=models.CASCADE, related_name='payments')
 
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.payment_method:
             self.payment_method_title = self.payment_method.title
-
-        if self.bill:
-            all_payments = Payment.objects.filter(bill=self.bill)
-            total_payments = all_payments.aggregate(Sum('value'))['value__sum'] or 0
-            total_bill = Order.objects.filter(bill=self.bill).aggregate(Sum('total'))['total__sum'] or 0
-            if total_payments + self.value > total_bill:
-                self.bill.tip = total_payments + self.value - total_bill
-                self.bill.save()
-
         super().save(*args, **kwargs)
+        if self.payment_group:
+            self.payment_group.update_total()
+
 
     def __str__(self):
         return f'{self.payment_method.title} - {self.value}'

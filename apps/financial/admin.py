@@ -10,6 +10,7 @@ from .models import (
     OrderStatus,
     OrderGroup,
     TakeoutOrder,
+    PaymentGroup,
 )
 # Register your models here.
 
@@ -24,13 +25,17 @@ class OderFieldsInline(admin.TabularInline):
     readonly_fields = ['unit_price', 'product_title']
     inlines = [OderComplementsFieldsInline]
 
+class OrderGroupInline(admin.TabularInline):
+    model = OrderGroup
+    readonly_fields = ['id', 'order_number', 'collaborator_name', 'total']
+
 @admin.register(Cashier)
 class CashierAdmin(admin.ModelAdmin):
     pass
 
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
-    pass
+    inlines = [OrderGroupInline]
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -63,3 +68,14 @@ class OrderGroupAdmin(admin.ModelAdmin):
 @admin.register(TakeoutOrder)
 class TakeoutOrderAdmin(admin.ModelAdmin):
     pass
+
+class PaymentInline(admin.TabularInline):
+    model = Payment
+
+class BillsInline(admin.TabularInline):
+    model = Bill
+    fields = ['number', 'open', 'client_name']
+@admin.register(PaymentGroup)
+class PaymentGroupAdmin(admin.ModelAdmin):
+    inlines = [BillsInline,PaymentInline]
+

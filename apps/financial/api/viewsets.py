@@ -5,7 +5,8 @@ from apps.financial.models import (
     Cashier,
     Bill,
     OrderGroup,
-    PaymentMethod
+    PaymentMethod,
+    PaymentGroup
 )
 from .serializers import (
     CashierSerializer,
@@ -13,7 +14,8 @@ from .serializers import (
     OrderGroupSerialier,
     OrderGroupListSerializer,
     DeleteOrderSerializer,
-    PaymentsMethodSerializer
+    PaymentsMethodSerializer,
+    PaymentGroupSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -105,3 +107,21 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
                 return PaymentMethod.objects.filter(restaurant=restaurant)
             except AttributeError:
                 return PaymentMethod.objects.none()
+
+
+class PaymentGroupViewSet(viewsets.ModelViewSet):
+    serializer_class = PaymentGroupSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            restaurant = user.employer.restaurant
+            return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+                return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+            except AttributeError:
+                return PaymentGroup.objects.none()
