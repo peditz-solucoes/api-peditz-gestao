@@ -428,7 +428,7 @@ class PaymentMethodListSerializer(serializers.ModelSerializer):
             'note',
             'created',
             'id'
-    ]
+]
 
 class ListPaymentsGroupsSerializer(serializers.ModelSerializer):
     payments = PaymentMethodListSerializer(many=True, read_only=True)

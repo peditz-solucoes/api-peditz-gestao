@@ -2,6 +2,7 @@
 
 from rest_framework import viewsets
 from apps.restaurants.models import (
+    Printer,
     Restaurant,
     Employer,
     ProductCategory,
@@ -11,6 +12,7 @@ from apps.restaurants.models import (
     Table,
 )
 from .serializers import (
+    PrinterSerializer,
     RestaurantSerializer, 
     EmployerSerializer, 
     ProductCategorySerializer, 
@@ -121,3 +123,18 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return  Employer.objects.filter(user=self.request.user)
     http_method_names = ['get']
+
+class PrinterViewSet(viewsets.ModelViewSet):
+    serializer_class = PrinterSerializer
+    permission_classes = (IsAuthenticated,)
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            employer = user.employer
+            return  Printer.objects.filter(restaurant=employer.restaurant)
+        except AttributeError:
+            try: 
+                restaurant = user.restaurants
+                return  Printer.objects.filter(restaurant=restaurant)
+            except AttributeError:
+                return Printer.objects.none()

@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import include,path
 from rest_framework import routers
 from apps.restaurants.api.viewsets import (
+    PrinterViewSet,
     ProductComplentItemViewSet, 
     RestaurantViewSet, 
     EmployerViewSet, 
@@ -65,6 +66,7 @@ router.register(r'order-delete', DeleteOrderViewSet, basename='order-delete')
 router.register(r'payment-method', PaymentMethodViewSet, basename='payment-method')
 router.register(r'payment', PaymentGroupViewSet, basename='payment')
 router.register(r'list-payment', ListPaymentGroupViewSet, basename='list-payment')
+router.register(r'print', PrinterViewSet, basename='print')
 
 schema_view = get_schema_view(
     openapi.Info(

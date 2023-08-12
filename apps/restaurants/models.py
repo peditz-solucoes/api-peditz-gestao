@@ -87,8 +87,8 @@ class Restaurant(TimeStampedModel, UUIDModel):
 
 class Printer(models.Model):
     name = models.CharField(max_length=100)
-    ip = models.CharField(max_length=100)
-    port = models.IntegerField()
+    ip = models.CharField(max_length=100, blank=True, null=True)
+    port = models.IntegerField(default=9100, blank=True, null=True)
     active = models.BooleanField(default=True)
     paper_width = models.IntegerField(default=80, help_text='valor em mm')
     titleFontSize = models.IntegerField(default=18)

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.user.models import User
 from apps.financial.models import Bill
 from apps.restaurants.models import( 
+    Printer,
     Product, 
     Restaurant, 
     RestauratCategory,
@@ -212,3 +213,36 @@ class UserPermissionsSerializer(serializers.ModelSerializer):
         fields = ['id', 'sidebar_permissions', 'role', 'office', 'user']
 
     
+class PrinterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Printer
+        fields = '__all__'
+        read_only_fields = ('restaurant',)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant= Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant= Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().update(instance, validated_data)
