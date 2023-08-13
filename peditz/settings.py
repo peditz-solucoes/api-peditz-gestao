@@ -143,7 +143,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -230,6 +230,8 @@ expires = time.time() + 6 * 24 * 3600 # 6 days from now
 
 DEFAULT_FILE_STORAGE = 'peditz.storage_backends.CustomS3Boto3Storage'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS', '')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET', '')
@@ -247,7 +249,7 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 THUMBNAIL_FORCE_OVERWRITE = True
 THUMBNAIL_QUALITY = 80
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 JWT_AUTH = {
     # how long the original token is valid for
