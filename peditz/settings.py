@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-b3@h@(2)o+=c4nk9j9g33&pz508qc-mbe4w9n)-f#qr#myx!nh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG", True)
+DEBUG = env.bool("DEBUG", False)
 
 ALLOWED_HOSTS = ['*']
 
@@ -232,15 +232,15 @@ expires = time.time() + 6 * 24 * 3600 # 6 days from now
 DEFAULT_FILE_STORAGE = 'peditz.storage_backends.CustomS3Boto3Storage'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS', 'DO00EMLCZEXNBJN7XVEF')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET', 'Me5Qa4ejhi+RuDdQjDhmxX5yDzmMABPd71/GW+O/UTQ')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'pracaappmix')
-AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', 'https://nyc3.digitaloceanspaces.com')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('BUCKET_NAME', '')
+AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
     "ACL": "public-read"
 }
-AWS_LOCATION = os.environ.get('AWS_LOCATION', 'https://pracaappmix.nyc3.digitaloceanspaces.com')
+AWS_LOCATION = os.environ.get('AWS_LOCATION', '')
 
 CKEDITOR_UPLOAD_PATH = "site/uploads/"
 CKEDITOR_IMAGE_BACKEND = "pillow"

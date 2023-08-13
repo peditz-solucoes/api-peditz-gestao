@@ -41,11 +41,12 @@ from apps.financial.api.viewsets import (
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+import os
 
-
-admin.sites.AdminSite.site_header = 'Adiministração Peditz'
-admin.sites.AdminSite.site_title = 'Peditz Gestão'
-admin.sites.AdminSite.index_title = 'Peditz Gestão'
+# 'Adiministração Peditz'
+admin.sites.AdminSite.site_header = os.environ.get('ENVIRONMENT_HEADER', 'Local Adiministração Peditz')
+admin.sites.AdminSite.site_title = os.environ.get('ENVIRONMENT_NAME', 'Local Peditz Gestão')
+admin.sites.AdminSite.index_title = os.environ.get('ENVIRONMENT_NAME', 'Local Peditz Gestão')
 
 
 router = routers.DefaultRouter()
