@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-b3@h@(2)o+=c4nk9j9g33&pz508qc-mbe4w9n)-f#qr#myx!nh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG", True)
+DEBUG = env.bool("DEBUG", False)
 
 ALLOWED_HOSTS = ['*']
 
@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'dj_rest_auth.registration',
-    'drf_yasg',
     'corsheaders',
     'localflavor',
     'phonenumber_field',
@@ -68,6 +67,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,7 +76,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://peditz-gestao-production.up.railway.app', 'http://localhost:5173']
+CSRF_TRUSTED_ORIGINS = ['https://peditz-gestao-production.up.railway.app', 'http://localhost:5173', 'https://api-hml.peditz.com', 'https://api.peditz.com']
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -144,7 +144,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -231,16 +231,18 @@ expires = time.time() + 6 * 24 * 3600 # 6 days from now
 
 DEFAULT_FILE_STORAGE = 'peditz.storage_backends.CustomS3Boto3Storage'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS', 'DO00EMLCZEXNBJN7XVEF')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET', 'Me5Qa4ejhi+RuDdQjDhmxX5yDzmMABPd71/GW+O/UTQ')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('BUCKET_NAME', 'pracaappmix')
-AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', 'https://nyc3.digitaloceanspaces.com')
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('BUCKET_NAME', '')
+AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL', '')
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
     "ACL": "public-read"
 }
-AWS_LOCATION = os.environ.get('AWS_LOCATION', 'https://pracaappmix.nyc3.digitaloceanspaces.com')
+AWS_LOCATION = os.environ.get('AWS_LOCATION', '')
 
 CKEDITOR_UPLOAD_PATH = "site/uploads/"
 CKEDITOR_IMAGE_BACKEND = "pillow"
@@ -248,7 +250,7 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 THUMBNAIL_FORCE_OVERWRITE = True
 THUMBNAIL_QUALITY = 80
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 JWT_AUTH = {
     # how long the original token is valid for

@@ -38,14 +38,12 @@ from apps.financial.api.viewsets import (
     PaymentGroupViewSet
 )
 
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
+import os
 
-
-
-admin.sites.AdminSite.site_header = 'Adiministração Peditz'
-admin.sites.AdminSite.site_title = 'Peditz Gestão'
-admin.sites.AdminSite.index_title = 'Peditz Gestão'
+# 'Adiministração Peditz'
+admin.sites.AdminSite.site_header = os.environ.get('ENVIRONMENT_HEADER', 'Local Adiministração Peditz')
+admin.sites.AdminSite.site_title = os.environ.get('ENVIRONMENT_NAME', 'Local Peditz Gestão')
+admin.sites.AdminSite.index_title = os.environ.get('ENVIRONMENT_NAME', 'Local Peditz Gestão')
 
 
 router = routers.DefaultRouter()
@@ -68,14 +66,6 @@ router.register(r'payment', PaymentGroupViewSet, basename='payment')
 router.register(r'list-payment', ListPaymentGroupViewSet, basename='list-payment')
 router.register(r'print', PrinterViewSet, basename='print')
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title='API Peditz Gestão',
-        default_version='0.0.1',
-        description='API para gestão de restaurantes',
-    )
-)
-
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -84,6 +74,5 @@ urlpatterns = [
     path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/v1/auth/', include('dj_rest_auth.urls')),
     path('api/v1/account/', include('allauth.urls')),
-    path('api/v1/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='api_docs'),
 
 ]
