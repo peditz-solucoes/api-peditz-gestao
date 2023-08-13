@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'dj_rest_auth.registration',
-    'drf_yasg',
     'corsheaders',
     'localflavor',
     'phonenumber_field',
