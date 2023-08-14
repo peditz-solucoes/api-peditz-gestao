@@ -2,6 +2,7 @@ from django.db import models
 from model_utils.models import (
     TimeStampedModel,
     UUIDModel,
+    StatusField,
 )
 from django.utils.translation import gettext as _
 from apps.restaurants.models import Restaurant
@@ -50,7 +51,7 @@ class Company(TimeStampedModel, UUIDModel):
         verbose_name = _('Company')
         verbose_name_plural = _('Companies')
     
-    restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='companies')
+    restaurant = models.OneToOneField(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='company')
     natureza_operacao = models.CharField(_('Natureza da operação'), max_length=255, blank=True, null=True, default="VENDA AO CONSUMIDOR")
     presenca_comprador = models.CharField(_('Presença do comprador'), max_length=1, choices=PRESENCA_COMPRADOR, default='1')
     modalidade_frete = models.CharField(_('Modalidade do frete'), max_length=1, choices=MODALIDADE_FRETE, default='9')
@@ -82,16 +83,24 @@ class Company(TimeStampedModel, UUIDModel):
         return self.nome
 
 
+
 class Tax(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Tax')
         verbose_name_plural = _('Taxes')
+    STATUS = (
+        ('1', 'Aguardando envio'),
+        ('2', 'Enviado'),
+        ('3', 'Cancelado'),
+        ('4', 'Erro'),
+        ('5', 'Autorizado'),
+    )
     
     company = models.ForeignKey(Company, verbose_name=_('Company'), on_delete=models.CASCADE, related_name='taxes')
     data_emissao = models.DateTimeField(_('Emission date'), blank=True, null=True)
     emited = models.BooleanField(_('Emited'), default=False)
     ref = models.CharField(_('External reference'), max_length=255, blank=True, null=True)
-    status = models.CharField(_('Status'), max_length=255, blank=True, null=True)
+    status = StatusField(_('Status'), choices=STATUS, default='1')
     status_sefaz = models.CharField(_('Status SEFAZ'), max_length=255, blank=True, null=True)
     mensagem_sefaz = models.CharField(_('Message SEFAZ'), max_length=255, blank=True, null=True)
     serie = models.CharField(_('Series'), max_length=255, blank=True, null=True)
@@ -101,10 +110,10 @@ class Tax(TimeStampedModel, UUIDModel):
     caminho_danfe = models.CharField(_('DANFE path'), max_length=255, blank=True, null=True)
     qrcode_url = models.CharField(_('QRCode URL'), max_length=255, blank=True, null=True)
     url_consulta_nf = models.CharField(_('URL for consultation'), max_length=255, blank=True, null=True)
-
+    link = models.URLField(_('Link'), blank=True, null=True)
 
     def __str__(self):
-        return self.ref
+        return self.company.restaurant.title
     
 class TaxItems(TimeStampedModel, UUIDModel):
     class Meta:
@@ -112,11 +121,8 @@ class TaxItems(TimeStampedModel, UUIDModel):
         verbose_name_plural = _('Tax items')
 
     tax = models.ForeignKey(Tax, verbose_name=_('Tax'), on_delete=models.CASCADE, related_name='items')
-    order = models.ForeignKey(Order, verbose_name=_('Order'), on_delete=models.CASCADE, related_name='tax_items')
-    numero_item = models.PositiveIntegerField(_('Item number'))
     quantidade_comercial = models.DecimalField(_('Commercial quantity'), max_digits=10, decimal_places=3)
     quantidade_tributavel = models.DecimalField(_('Taxable quantity'), max_digits=10, decimal_places=3)
-    cfop = models.CharField(_('CFOP'), max_length=255)
     valor_bruto = models.DecimalField(_('Gross value'), max_digits=10, decimal_places=2)
     valor_desconto = models.DecimalField(_('Discount value'), max_digits=10, decimal_places=2, blank=True, null=True)
     valor_frete = models.DecimalField(_('Freight value'), max_digits=10, decimal_places=2, blank=True, null=True)

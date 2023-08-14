@@ -85,6 +85,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': [
                 'codigo_ncm',
                 'codigo_produto',
+                'cfop',
                 'valor_unitario_comercial',
                 'valor_unitario_tributavel',
                 'product_tax_description',

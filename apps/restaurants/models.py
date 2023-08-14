@@ -36,6 +36,7 @@ ICMS_SITUACAO_TRIBUTARIA = (
     ('40', '40 – Isenta'),
     ('41', '41 - Não tributada'),
     ('60', '60 - ICMS cobrado anteriormente por substituição tributária'),
+    ('20', '20 – Com redução de base de cálculo'),
 )
 ICMS_MODALIDADE_BASE_CALCULO = (
     ('0', '0 – margem de valor agregado (%)'),
@@ -168,6 +169,7 @@ class Product(TimeStampedModel, UUIDModel):
     
     codigo_ncm = models.CharField(max_length=255, blank=True, null=True, help_text='Código NCM do produto (8 dígitos).')
     codigo_produto = models.CharField(verbose_name=_('Product Code'), max_length=255, blank=True, null=True)
+    cfop = models.CharField(max_length=255, blank=True, null=True, help_text='Código Fiscal de Operações e Prestações (4 dígitos).')
     valor_unitario_comercial = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     valor_unitario_tributavel = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     product_tax_description = models.TextField(max_length=255, blank=True, null=True)
@@ -175,7 +177,7 @@ class Product(TimeStampedModel, UUIDModel):
     unidade_tributavel = models.CharField(max_length=255, blank=True, null=True, choices=PRODUCT_TYPES, help_text='Unidade tributável do produto. Caso não se aplique utilize o mesmo valor do campo unidade_comercial.')
     icms_origem = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_ORIGEM)
     icms_situacao_tributaria =  models.CharField(blank=True, null=True, max_length=255, choices=ICMS_SITUACAO_TRIBUTARIA)
-    icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=3, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
+    icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=5, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
     icms_base_calculo = models.DecimalField(blank=True, null=True, max_digits=10, decimal_places=2, help_text='Base de cálculo do ICMS. Normalmente é igual ao valor_bruto.')
     icms_modalidade_base_calculo = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_MODALIDADE_BASE_CALCULO)
     def __str__(self):
