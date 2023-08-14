@@ -1,14 +1,23 @@
+import csv
+from decimal import Decimal
 from django.db import models
+from django.dispatch import receiver
 from model_utils.models import (
     TimeStampedModel,
     UUIDModel,
 )
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
+import requests
 from apps.user.models import User
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
+from django.db.models.signals import post_save
+from django.db import transaction
 def upload_path(instance, filname):
     return '/'.join(['restaurants', str(instance.slug), filname])
+
+def upload_path_csv(instance, filname):
+    return '/'.join(['csv', str(instance.id), filname])
 
 def upload_path_catalogs(instance, filname):
     return '/'.join(['catalogs', str(instance.restaurant.slug), str(instance.slug), filname])
@@ -144,6 +153,7 @@ class ProductCategory(TimeStampedModel, UUIDModel):
     
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='product_categories')
 
@@ -262,3 +272,63 @@ class Catalog(TimeStampedModel, UUIDModel):
         return self.title
     
 
+class AutoRegister(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Auto Register')
+        verbose_name_plural = _('Auto Registers')
+    
+    csv = models.FileField(upload_to=upload_path_csv, blank=True, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='auto_registers')
+    def __str__(self):
+        return self.restaurant.title + ' ' + str(self.created)
+    
+
+@receiver(post_save, sender=AutoRegister)
+@transaction.atomic
+def auto_register(sender, instance, created, **kwargs):
+    if created:
+        response = requests.get(instance.csv.url)
+        
+        # Verifique se a solicitação foi bem-sucedida
+        if response.status_code == 200:
+            content = response.content.decode('utf-8')
+            lines = content.splitlines()
+            reader = csv.reader(lines)
+            next(reader)
+            for row in reader:
+                category = ProductCategory.objects.get_or_create(
+                    title=row[3],
+                    restaurant=instance.restaurant,
+                )[0]
+                category.save()
+                printer = Printer.objects.get_or_create(
+                    name=row[16],
+                    restaurant=instance.restaurant,
+                )[0]
+                printer.save()
+                product = Product.objects.get_or_create(
+                    title = row[0],
+                    description = row[1],
+                    price = Decimal(row[2].replace('.', '').replace(',', '.')),
+                    product_category = category,
+                    codigo_ncm = row[4],
+                    codigo_produto = row[5],
+                    icms_aliquota = Decimal(row[6].replace('.', '').replace(',', '.')),
+                    icms_base_calculo = Decimal(row[7].replace('.', '').replace(',', '.')),
+                    icms_modalidade_base_calculo = row[8],
+                    icms_origem = row[9],
+                    icms_situacao_tributaria = row[10],
+                    product_tax_description = row[11],
+                    unidade_comercial = row[12],
+                    unidade_tributavel = row[13],
+                    valor_unitario_comercial = Decimal(row[14].replace('.', '').replace(',', '.')),
+                    valor_unitario_tributavel = Decimal(row[15].replace('.', '').replace(',', '.')),
+                    printer = printer,
+                    type_of_sale = row[17],
+                    cfop = row[18],
+                )[0]
+                product.save()
+                print(product)
+        else:
+            print(f"Failed to fetch CSV file: {response.status_code}")
+                

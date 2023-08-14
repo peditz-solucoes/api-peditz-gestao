@@ -40,7 +40,7 @@ from apps.financial.api.viewsets import (
 
 import os
 
-from apps.tax_module.api.viewsets import TaxViewSet
+from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet
 
 # 'Adiministração Peditz'
 admin.sites.AdminSite.site_header = os.environ.get('ENVIRONMENT_HEADER', 'Local Adiministração Peditz')
@@ -68,6 +68,7 @@ router.register(r'payment', PaymentGroupViewSet, basename='payment')
 router.register(r'list-payment', ListPaymentGroupViewSet, basename='list-payment')
 router.register(r'print', PrinterViewSet, basename='print')
 router.register(r'tax', TaxViewSet, basename='tax')
+router.register(r'tax-test', TestTaxViewSet, basename='tax-test')
 
 
 urlpatterns = [

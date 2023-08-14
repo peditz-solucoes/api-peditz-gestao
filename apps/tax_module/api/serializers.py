@@ -3,6 +3,8 @@ import json
 import requests
 from rest_framework import serializers
 
+from apps.restaurants.models import Product
+
 from ..models import Tax
 import pytz
 from datetime import datetime
@@ -104,6 +106,60 @@ class TaxSerializer(serializers.ModelSerializer):
         tax.save()
         resp['link'] = resp['url']
         resp['data_emissao'] = tax.data_emissao
+        return resp
+    
+
+class TestTaxSerializer(serializers.ModelSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        write_only=True
+    )
+    response = serializers.JSONField(
+        read_only=True
+    )
+    class Meta:
+        model = Tax
+        fields = '__all__'
+        read_only_fields = [
+            'company',
+            'data_emissao',
+            'emited',
+            'ref',
+            'status',
+            'status_sefaz',
+            'mensagem_sefaz',
+            'serie',
+            'numero',
+            'chave_nfe',
+            'caminho_xml_nota_fiscal',
+            'caminho_danfe',
+            'qrcode_url',
+            'url_consulta_nf',
+            'response',
+            'link'
+        ]
+
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context['request'].user
+        try: 
+            restaurant = user.employer.restaurant
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+            except AttributeError:
+                raise serializers.ValidationError({"detail":"Este usuário não possui um restaurante."})
+        try:
+            company = restaurant.company
+        except AttributeError:
+            raise serializers.ValidationError({"detail":"Este restaurante não possui perfil de empresa para emitir nota."})
+
+        resp = focus_api.test_product(
+            product_id=validated_data['product_id'].id,
+            company=company
+        )
+        resp['link'] = resp['url']
         return resp
 
 
