@@ -165,7 +165,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
     status = StatusOrderSerializer(read_only=True)
     restaurant = RestaurantCashierSerializer(read_only=True)
     collaborator = EmployerOrderSerializer(read_only=True)
-    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.filter(open=True), source='bill')
+    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.filter(), source='bill')
     operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     order_items = serializers.JSONField()
     class Meta:
@@ -228,12 +228,16 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             order_db = None
             try: 
                 product = Product.objects.get(id=order['product_id'])
+                if product.printer is not None:
+                    printer = product.printer.name
+                else:
+                    printer = None
                 order_items_output.append({
                     'product_id':  order['product_id'],
                     'product_title':  product.title,
                     'notes': order.get('notes', ''),
                     'quantity': order['quantity'],
-                    'printer_name': product.printer.name,
+                    'printer_name': printer,
                     'items': [],
                 })
                 order_db = Order.objects.create(
