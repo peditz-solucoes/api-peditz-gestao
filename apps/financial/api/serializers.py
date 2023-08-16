@@ -298,8 +298,17 @@ class ComplementSerializer(serializers.ModelSerializer):
         model = OrderComplement
         fields = ['complement_group_title', 'items', 'id', 'total', ]
 
+class ProductListOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'title',
+            'price',
+        ]
 class OrderSerializer(serializers.ModelSerializer):
     complements = ComplementSerializer(many=True, read_only=True)
+    product = ProductListOrderSerializer(read_only=True)
     class Meta:
         model = Order
         fields = [
@@ -309,6 +318,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'unit_price',
             'note',
             'total',
+            'product',
             'complements'
         ]
 
