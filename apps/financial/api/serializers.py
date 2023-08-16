@@ -215,7 +215,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         else:
             try:
-                employer = Employer.objects.get(code=validated_data.get('operator_code', None))
+                employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('bill', None).cashier.restaurant)
                 restaurant = employer.restaurant
             except Employer.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Código de operador inválido."})
