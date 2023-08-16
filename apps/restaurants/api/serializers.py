@@ -209,11 +209,16 @@ class BillSerializer(serializers.ModelSerializer):
         fields = ['id', 'number', 'open', 'client_name', 'created']
 
 class TableSerializer(serializers.ModelSerializer):
-    bills = BillSerializer(many=True, read_only=True)
+    bills = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Table
         fields = '__all__'
         read_only_fields = ('restaurant',)
+
+    def get_bills(self, obj):
+        bills = obj.bills.filter(open=True)
+        serializer = BillSerializer(bills, many=True)
+        return serializer.data
 
     def create(self, validated_data):
         user = self.context['request'].user
