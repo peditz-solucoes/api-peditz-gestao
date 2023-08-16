@@ -1,5 +1,7 @@
 
 from datetime import datetime
+import json
+from uuid import UUID
 from rest_framework import serializers
 from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
@@ -8,6 +10,14 @@ from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSeria
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
 class UserCashierSerializer(UserSerializer):
     class Meta:
         model = UserSerializer.Meta.model
@@ -167,6 +177,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
     collaborator = EmployerOrderSerializer(read_only=True)
     bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.filter(), source='bill')
     operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
+    from_app = serializers.BooleanField(write_only=True, default=False)
     order_items = serializers.JSONField()
     class Meta:
         model = OrderGroup
@@ -183,7 +194,8 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'type',
             'bill_id',
             'operator_code',
-            'order_items'
+            'order_items',
+            'from_app',
         ]
         read_only_fields = ['collaborator_name', 'total', 'order_number', 'type']
     @transaction.atomic
@@ -287,6 +299,14 @@ class OrderGroupSerialier(serializers.ModelSerializer):
 
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
+        if validated_data.get('from_app', False):
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "pedidos_%s" % restaurant.id,
+                {"type": "att",
+                    "message": json.dumps(order_items_output, cls=UUIDEncoder)
+                }
+            )
         order_group.order_items = order_items_output
         return order_group
 
