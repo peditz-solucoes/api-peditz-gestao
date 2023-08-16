@@ -230,6 +230,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                 product = Product.objects.get(id=order['product_id'])
                 order_items_output.append({
                     'product_id':  order['product_id'],
+                    'product_title':  product.title,
                     'notes': order.get('notes', ''),
                     'quantity': order['quantity'],
                     'printer_name': product.printer.name,
