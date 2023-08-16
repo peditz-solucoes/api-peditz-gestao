@@ -393,6 +393,8 @@ class PaymentGroupSerializer(serializers.ModelSerializer):
         for bill in bills:
             try:
                 bill_db = Bill.objects.get(id=bill)
+                if bill_db.open == False:
+                    raise serializers.ValidationError({"detail":"Conta já foi fechada."})
                 bill_db.payment_group = payment_group
                 bill_db.open = False
                 bill_db.save()
