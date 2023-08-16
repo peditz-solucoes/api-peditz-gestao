@@ -126,12 +126,56 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('restaurant',)
 
+
+class PrinterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Printer
+        fields = '__all__'
+        read_only_fields = ('restaurant',)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant= Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        try:
+            restaurant= Restaurant.objects.get(owner=user)
+        except Restaurant.DoesNotExist:
+            restaurant = None
+            try:
+                employer = Employer.objects.get(user=user)
+                restaurant = employer.restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        validated_data['restaurant'] = restaurant
+        return super().update(instance, validated_data)
+
+class PrinterDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Printer
+        fields = ['id', 'name']
 class ProductSerializer(serializers.ModelSerializer):
     category = ProductCategorySerializer(source='product_category', read_only=True)
-
+    printer_detail = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Product
         fields = '__all__'
+
+    def get_printer_detail(self, obj):
+        printer = obj.printer
+        serializer = PrinterDetailSerializer(printer)
+        return serializer.data
 
 class ProductComplementItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -213,36 +257,3 @@ class UserPermissionsSerializer(serializers.ModelSerializer):
         fields = ['id', 'sidebar_permissions', 'role', 'office', 'user']
 
     
-class PrinterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Printer
-        fields = '__all__'
-        read_only_fields = ('restaurant',)
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        try:
-            restaurant= Restaurant.objects.get(owner=user)
-        except Restaurant.DoesNotExist:
-            restaurant = None
-            try:
-                employer = Employer.objects.get(user=user)
-                restaurant = employer.restaurant
-            except Employer.DoesNotExist:
-                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
-        validated_data['restaurant'] = restaurant
-        return super().create(validated_data)
-    
-    def update(self, instance, validated_data):
-        user = self.context['request'].user
-        try:
-            restaurant= Restaurant.objects.get(owner=user)
-        except Restaurant.DoesNotExist:
-            restaurant = None
-            try:
-                employer = Employer.objects.get(user=user)
-                restaurant = employer.restaurant
-            except Employer.DoesNotExist:
-                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
-        validated_data['restaurant'] = restaurant
-        return super().update(instance, validated_data)

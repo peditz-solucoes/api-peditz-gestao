@@ -165,8 +165,8 @@ class OrderGroupSerialier(serializers.ModelSerializer):
     status = StatusOrderSerializer(read_only=True)
     restaurant = RestaurantCashierSerializer(read_only=True)
     collaborator = EmployerOrderSerializer(read_only=True)
-    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.all(), source='bill')
-    operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True)
+    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.filter(open=True), source='bill')
+    operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     order_items = serializers.JSONField()
     class Meta:
         model = OrderGroup
@@ -193,6 +193,8 @@ class OrderGroupSerialier(serializers.ModelSerializer):
         employer = None
         if validated_data.get('bill', None) is None:
             raise serializers.ValidationError({"detail":"É necessário informar uma conta."})
+        if validated_data.get('bill', None).open == False:
+            raise serializers.ValidationError({"detail":"Conta já foi fechada."})
         if validated_data.get('operator_code', None) == '' or validated_data.get('operator_code', None) == None:
             if user.employer:
                 employer = user.employer
@@ -224,14 +226,15 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
         for order in orders:
             order_db = None
-            order_items_output.append({
-                'product_id':  order['product_id'],
-                'notes': order.get('notes', ''),
-                'quantity': order['quantity'],
-                'items': [],
-            })
             try: 
                 product = Product.objects.get(id=order['product_id'])
+                order_items_output.append({
+                    'product_id':  order['product_id'],
+                    'notes': order.get('notes', ''),
+                    'quantity': order['quantity'],
+                    'printer_name': product.printer.name,
+                    'items': [],
+                })
                 order_db = Order.objects.create(
                     product=product,
                     note=order.get('notes', ''),
