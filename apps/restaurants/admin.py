@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar
+from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -85,6 +85,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': [
                 'codigo_ncm',
                 'codigo_produto',
+                'cfop',
                 'valor_unitario_comercial',
                 'valor_unitario_tributavel',
                 'product_tax_description',
@@ -152,3 +153,8 @@ class ProductComplementItemAdmin(admin.ModelAdmin):
 @admin.register(Sidebar)
 class SidebarAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(AutoRegister)
+class AutoRegisterAdmin(admin.ModelAdmin):
+    pass
+

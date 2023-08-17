@@ -1,14 +1,23 @@
+import csv
+from decimal import Decimal
 from django.db import models
+from django.dispatch import receiver
 from model_utils.models import (
     TimeStampedModel,
     UUIDModel,
 )
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
+import requests
 from apps.user.models import User
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
+from django.db.models.signals import post_save
+from django.db import transaction
 def upload_path(instance, filname):
     return '/'.join(['restaurants', str(instance.slug), filname])
+
+def upload_path_csv(instance, filname):
+    return '/'.join(['csv', str(instance.id), filname])
 
 def upload_path_catalogs(instance, filname):
     return '/'.join(['catalogs', str(instance.restaurant.slug), str(instance.slug), filname])
@@ -36,6 +45,7 @@ ICMS_SITUACAO_TRIBUTARIA = (
     ('40', '40 – Isenta'),
     ('41', '41 - Não tributada'),
     ('60', '60 - ICMS cobrado anteriormente por substituição tributária'),
+    ('20', '20 – Com redução de base de cálculo'),
 )
 ICMS_MODALIDADE_BASE_CALCULO = (
     ('0', '0 – margem de valor agregado (%)'),
@@ -143,6 +153,7 @@ class ProductCategory(TimeStampedModel, UUIDModel):
     
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=0)
+    active = models.BooleanField(default=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='product_categories')
 
@@ -168,6 +179,7 @@ class Product(TimeStampedModel, UUIDModel):
     
     codigo_ncm = models.CharField(max_length=255, blank=True, null=True, help_text='Código NCM do produto (8 dígitos).')
     codigo_produto = models.CharField(verbose_name=_('Product Code'), max_length=255, blank=True, null=True)
+    cfop = models.CharField(max_length=255, blank=True, null=True, help_text='Código Fiscal de Operações e Prestações (4 dígitos).')
     valor_unitario_comercial = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     valor_unitario_tributavel = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     product_tax_description = models.TextField(max_length=255, blank=True, null=True)
@@ -175,7 +187,7 @@ class Product(TimeStampedModel, UUIDModel):
     unidade_tributavel = models.CharField(max_length=255, blank=True, null=True, choices=PRODUCT_TYPES, help_text='Unidade tributável do produto. Caso não se aplique utilize o mesmo valor do campo unidade_comercial.')
     icms_origem = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_ORIGEM)
     icms_situacao_tributaria =  models.CharField(blank=True, null=True, max_length=255, choices=ICMS_SITUACAO_TRIBUTARIA)
-    icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=3, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
+    icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=5, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
     icms_base_calculo = models.DecimalField(blank=True, null=True, max_digits=10, decimal_places=2, help_text='Base de cálculo do ICMS. Normalmente é igual ao valor_bruto.')
     icms_modalidade_base_calculo = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_MODALIDADE_BASE_CALCULO)
     def __str__(self):
@@ -260,3 +272,63 @@ class Catalog(TimeStampedModel, UUIDModel):
         return self.title
     
 
+class AutoRegister(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Auto Register')
+        verbose_name_plural = _('Auto Registers')
+    
+    csv = models.FileField(upload_to=upload_path_csv, blank=True, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='auto_registers')
+    def __str__(self):
+        return self.restaurant.title + ' ' + str(self.created)
+    
+
+@receiver(post_save, sender=AutoRegister)
+@transaction.atomic
+def auto_register(sender, instance, created, **kwargs):
+    if created:
+        response = requests.get(instance.csv.url)
+        
+        # Verifique se a solicitação foi bem-sucedida
+        if response.status_code == 200:
+            content = response.content.decode('utf-8')
+            lines = content.splitlines()
+            reader = csv.reader(lines)
+            next(reader)
+            for row in reader:
+                category = ProductCategory.objects.get_or_create(
+                    title=row[3],
+                    restaurant=instance.restaurant,
+                )[0]
+                category.save()
+                printer = Printer.objects.get_or_create(
+                    name=row[16],
+                    restaurant=instance.restaurant,
+                )[0]
+                printer.save()
+                product = Product.objects.get_or_create(
+                    title = row[0],
+                    description = row[1],
+                    price = Decimal(row[2].replace('.', '').replace(',', '.')),
+                    product_category = category,
+                    codigo_ncm = row[4],
+                    codigo_produto = row[5],
+                    icms_aliquota = Decimal(row[6].replace('.', '').replace(',', '.')),
+                    icms_base_calculo = Decimal(row[7].replace('.', '').replace(',', '.')),
+                    icms_modalidade_base_calculo = row[8],
+                    icms_origem = row[9],
+                    icms_situacao_tributaria = row[10],
+                    product_tax_description = row[11],
+                    unidade_comercial = row[12],
+                    unidade_tributavel = row[13],
+                    valor_unitario_comercial = Decimal(row[14].replace('.', '').replace(',', '.')),
+                    valor_unitario_tributavel = Decimal(row[15].replace('.', '').replace(',', '.')),
+                    printer = printer,
+                    type_of_sale = row[17],
+                    cfop = row[18],
+                )[0]
+                product.save()
+                print(product)
+        else:
+            print(f"Failed to fetch CSV file: {response.status_code}")
+                

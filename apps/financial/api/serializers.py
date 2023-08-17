@@ -1,5 +1,7 @@
 
 from datetime import datetime
+import json
+from uuid import UUID
 from rest_framework import serializers
 from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
@@ -8,6 +10,14 @@ from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSeria
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
 class UserCashierSerializer(UserSerializer):
     class Meta:
         model = UserSerializer.Meta.model
@@ -165,8 +175,9 @@ class OrderGroupSerialier(serializers.ModelSerializer):
     status = StatusOrderSerializer(read_only=True)
     restaurant = RestaurantCashierSerializer(read_only=True)
     collaborator = EmployerOrderSerializer(read_only=True)
-    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.all(), source='bill')
-    operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True)
+    bill_id = serializers.PrimaryKeyRelatedField(write_only=True, queryset=Bill.objects.filter(), source='bill')
+    operator_code = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
+    from_app = serializers.BooleanField(write_only=True, default=False)
     order_items = serializers.JSONField()
     class Meta:
         model = OrderGroup
@@ -183,7 +194,8 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'type',
             'bill_id',
             'operator_code',
-            'order_items'
+            'order_items',
+            'from_app',
         ]
         read_only_fields = ['collaborator_name', 'total', 'order_number', 'type']
     @transaction.atomic
@@ -193,6 +205,8 @@ class OrderGroupSerialier(serializers.ModelSerializer):
         employer = None
         if validated_data.get('bill', None) is None:
             raise serializers.ValidationError({"detail":"É necessário informar uma conta."})
+        if validated_data.get('bill', None).open == False:
+            raise serializers.ValidationError({"detail":"Conta já foi fechada."})
         if validated_data.get('operator_code', None) == '' or validated_data.get('operator_code', None) == None:
             if user.employer:
                 employer = user.employer
@@ -201,7 +215,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         else:
             try:
-                employer = Employer.objects.get(code=validated_data.get('operator_code', None))
+                employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('bill', None).cashier.restaurant)
                 restaurant = employer.restaurant
             except Employer.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Código de operador inválido."})
@@ -224,14 +238,20 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
         for order in orders:
             order_db = None
-            order_items_output.append({
-                'product_id':  order['product_id'],
-                'notes': order.get('notes', ''),
-                'quantity': order['quantity'],
-                'items': [],
-            })
             try: 
                 product = Product.objects.get(id=order['product_id'])
+                if product.printer is not None:
+                    printer = product.printer.name
+                else:
+                    printer = None
+                order_items_output.append({
+                    'product_id':  order['product_id'],
+                    'product_title':  product.title,
+                    'notes': order.get('notes', ''),
+                    'quantity': order['quantity'],
+                    'printer_name': printer,
+                    'items': [],
+                })
                 order_db = Order.objects.create(
                     product=product,
                     note=order.get('notes', ''),
@@ -279,6 +299,14 @@ class OrderGroupSerialier(serializers.ModelSerializer):
 
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
+        if validated_data.get('from_app', False):
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "pedidos_%s" % restaurant.id,
+                {"type": "att",
+                    "message": json.dumps(order_items_output, cls=UUIDEncoder)
+                }
+            )
         order_group.order_items = order_items_output
         return order_group
 
@@ -298,8 +326,17 @@ class ComplementSerializer(serializers.ModelSerializer):
         model = OrderComplement
         fields = ['complement_group_title', 'items', 'id', 'total', ]
 
+class ProductListOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'title',
+            'price',
+        ]
 class OrderSerializer(serializers.ModelSerializer):
     complements = ComplementSerializer(many=True, read_only=True)
+    product = ProductListOrderSerializer(read_only=True)
     class Meta:
         model = Order
         fields = [
@@ -309,6 +346,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'unit_price',
             'note',
             'total',
+            'product',
             'complements'
         ]
 
@@ -383,6 +421,8 @@ class PaymentGroupSerializer(serializers.ModelSerializer):
         for bill in bills:
             try:
                 bill_db = Bill.objects.get(id=bill)
+                if bill_db.open == False:
+                    raise serializers.ValidationError({"detail":"Conta já foi fechada."})
                 bill_db.payment_group = payment_group
                 bill_db.open = False
                 bill_db.save()
