@@ -303,7 +303,7 @@ class OrderComplement(TimeStampedModel, UUIDModel):
         self.save()
         all_groups = self.order.complements.all()
         if all_groups:
-            self.order.total = sum(group.total for group in all_groups) + self.order.unit_price
+            self.order.total = (sum(group.total for group in all_groups) + self.order.unit_price) * self.order.quantity 
             self.order.save()
 
     def __str__(self):
