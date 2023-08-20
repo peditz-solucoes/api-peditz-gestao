@@ -5,7 +5,9 @@ from apps.user.models import User
 from apps.financial.models import Bill
 from apps.restaurants.models import( 
     Printer,
-    Product, 
+    Product,
+    ProductComplementPrice,
+    ProductPrice, 
     Restaurant, 
     RestauratCategory,
     Employer,
@@ -13,7 +15,8 @@ from apps.restaurants.models import(
     ProductComplementCategory,
     ProductComplementItem,
     Sidebar,
-    Table
+    Table,
+    Catalog,
 )
 from django.db import transaction
 from apps.user.api.serializers import UserSerializer
@@ -262,3 +265,109 @@ class UserPermissionsSerializer(serializers.ModelSerializer):
         fields = ['id', 'sidebar_permissions', 'role', 'office', 'user']
 
     
+
+class ProductCategoryCatalogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = [
+            'id',
+            'title',
+        ]
+
+
+class ProductCatalogSerializer(serializers.ModelSerializer):
+    product_category = ProductCategoryCatalogSerializer(read_only=True)
+    complement_categories = ProductComplementSerializer(many=True, read_only=True)
+    class Meta:
+        model = Product
+        fields = [
+            "id",    
+            "title",
+            "description",
+            "price",
+            "listed",
+            "type_of_sale",
+            "codigo_produto",
+            "product_category",
+            "complement_categories"
+        ]
+
+class ProductComplementPriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductComplementPrice
+        fields = [
+            'id',
+            'price',
+            'product_complement_item',
+        ]
+
+class ProductPriceSerializer(serializers.ModelSerializer):
+    complement_prices = ProductComplementPriceSerializer(many=True, read_only=True)
+    product = ProductCatalogSerializer(read_only=True)
+    class Meta:
+        model = ProductPrice
+        fields = [
+            'id',
+            'price',
+            'product',
+            'complement_prices',
+        ]
+class CatalogSerializer(serializers.ModelSerializer):
+    products_prices = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = Catalog
+        fields = [
+            'id',
+            'title',
+            'description',
+            'slug',
+            'photo',
+            'delivery',
+            'products_prices',
+        ]
+
+    def get_products_prices(self, obj):
+        product_prices = obj.products_prices.filter(product__active=True, product__product_category__active=True, product__product_category__restaurant__active=True).order_by('product__product_category__order', 'product__product_category__title','product__order', 'product__title')
+        serializer = ProductPriceSerializer(product_prices, many=True)
+        return serializer.data
+    
+
+class CatalogInRestaurantSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = Catalog
+        fields = [
+            'id',
+            'title',
+            'description',
+            'slug',
+            'photo',
+            'delivery',
+        ]
+class RestaurantCatalogSerializer(serializers.ModelSerializer):
+    catalogs = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id',
+            'title',
+            'description',
+            'open',
+            'open_time',
+            'close_time',
+            'slug',
+            'photo',
+            'phone',
+            'zip_code',
+            'state',
+            'city',
+            'street',
+            'number',
+            'complement',
+            'catalogs',
+        ]
+
+    def get_catalogs(self, obj):
+        catalogs = obj.catalogs.filter(active=True).order_by('order', 'title')
+        serializer = CatalogInRestaurantSerializer(catalogs, many=True)
+        return serializer.data

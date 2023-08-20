@@ -10,9 +10,13 @@ from apps.restaurants.models import (
     ProductComplementCategory,
     ProductComplementItem,
     Table,
+    Catalog
 )
 from .serializers import (
+    CatalogSerializer,
     PrinterSerializer,
+    ProductCatalogSerializer,
+    RestaurantCatalogSerializer,
     RestaurantSerializer, 
     EmployerSerializer, 
     ProductCategorySerializer, 
@@ -22,7 +26,7 @@ from .serializers import (
     TableSerializer,
     UserPermissionsSerializer,
 )
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -138,3 +142,35 @@ class PrinterViewSet(viewsets.ModelViewSet):
                 return  Printer.objects.filter(restaurant=restaurant)
             except AttributeError:
                 return Printer.objects.none()
+            
+class ProductCatalogViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductCatalogSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['listed',]
+
+    def get_queryset(self):
+        return Product.objects.filter(active=True, product_category__active=True, product_category__restaurant__active=True).order_by('product_category__order', 'product_category__title','order', 'title')
+
+class CatalogViewSet(viewsets.ModelViewSet):
+    serializer_class = CatalogSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['slug',]
+
+    def get_queryset(self):
+        return Catalog.objects.filter(active=True).order_by('order', 'title')
+    
+class RestaurantCatalogViewSet(viewsets.ModelViewSet):
+    serializer_class = RestaurantCatalogSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['slug',]
+
+    def get_queryset(self):
+        return Restaurant.objects.filter(active=True)
+
+

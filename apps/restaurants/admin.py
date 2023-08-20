@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister
+from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister, ProductPrice, ProductComplementPrice
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -53,6 +53,10 @@ class EmployerAdmin(admin.ModelAdmin):
 class ExtraFieldsInline(admin.TabularInline):
     model = ProductComplementCategory
 
+class ProductPriceInline(admin.TabularInline):
+    model = ProductPrice
+class ProductComplementPriceInline(admin.TabularInline):
+    model = ProductComplementPrice
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'price', 'product_category', 'active', 'listed', 'order']
@@ -65,7 +69,7 @@ class ProductAdmin(admin.ModelAdmin):
                     ('listed', ChoiceDropdownFilter)
                    ]
     save_on_top = True
-    inlines = [ExtraFieldsInline,]
+    inlines = [ProductPriceInline, ExtraFieldsInline]
     fieldsets = [
         (_('Product'), {
             'fields': [
@@ -130,7 +134,7 @@ class CatalogAdmin(admin.ModelAdmin):
     list_display_links = ['title', 'restaurant']
     search_fields = ['title'],
     list_filter = [('restaurant', RelatedDropdownFilter), ('active', ChoiceDropdownFilter)]
-    filter_horizontal = ['products']
+    filter_horizontal = ['products_prices']
     save_on_top = True
     pass
 
@@ -158,3 +162,7 @@ class SidebarAdmin(admin.ModelAdmin):
 class AutoRegisterAdmin(admin.ModelAdmin):
     pass
 
+
+@admin.register(ProductPrice)
+class ProductPriceAdmin(admin.ModelAdmin):
+    inlines = [ProductComplementPriceInline,]
