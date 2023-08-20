@@ -158,7 +158,7 @@ class CatalogViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['slug',]
+    filterset_fields = ['slug', 'restaurant__slug']
 
     def get_queryset(self):
         return Catalog.objects.filter(active=True).order_by('order', 'title')
