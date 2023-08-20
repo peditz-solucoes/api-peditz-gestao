@@ -361,6 +361,12 @@ def auto_register(sender, instance, created, **kwargs):
                     cfop = row[18],
                 )[0]
                 product.save()
+                price = ProductPrice.objects.get_or_create(
+                    price = Decimal(row[2].replace('.', '').replace(',', '.')),
+                    product = product,
+                    tag='cardapio_digital'
+                )[0]
+                price.save()
                 print(product)
         else:
             print(f"Failed to fetch CSV file: {response.status_code}")
