@@ -14,6 +14,8 @@ from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
 from django.db.models.signals import post_save
 from django.db import transaction
 
+from django.utils.text import slugify
+
 def upload_path(instance, filname):
     return '/'.join(['restaurants', str(instance.slug), filname])
 
@@ -22,6 +24,9 @@ def upload_path_csv(instance, filname):
 
 def upload_path_catalogs(instance, filname):
     return '/'.join(['catalogs', str(instance.restaurant.slug), str(instance.slug), filname])
+
+def upload_path_product(instance, filname):
+    return '/'.join(['products', slugify(str(instance.product_category.restaurant.title)) ,slugify(str(instance.title)) ,filname])
 
 PRODUCT_TYPES = (
     ('KG', 'KG'),
@@ -173,6 +178,7 @@ class Product(TimeStampedModel, UUIDModel):
     order = models.IntegerField(default=0)
     active = models.BooleanField(default=True)
     listed = models.BooleanField(default=True)
+    photo = models.ImageField(upload_to=upload_path_product, blank=True, null=True, verbose_name=_('photo'))
     type_of_sale = models.CharField(max_length=3, choices=PRODUCT_TYPES, default='UN')
     product_category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name='products')

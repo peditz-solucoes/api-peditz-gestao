@@ -73,6 +73,7 @@ class ProductAdmin(admin.ModelAdmin):
     fieldsets = [
         (_('Product'), {
             'fields': [
+                'photo',
                 'title',
                 'description',
                 'price',
