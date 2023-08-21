@@ -17,8 +17,11 @@ from django.contrib import admin
 from django.urls import include,path
 from rest_framework import routers
 from apps.restaurants.api.viewsets import (
+    CatalogViewSet,
     PrinterViewSet,
-    ProductComplentItemViewSet, 
+    ProductCatalogViewSet,
+    ProductComplentItemViewSet,
+    RestaurantCatalogViewSet, 
     RestaurantViewSet, 
     EmployerViewSet, 
     ProductCategoryViewSet, 
@@ -69,6 +72,8 @@ router.register(r'list-payment', ListPaymentGroupViewSet, basename='list-payment
 router.register(r'print', PrinterViewSet, basename='print')
 router.register(r'tax', TaxViewSet, basename='tax')
 router.register(r'tax-test', TestTaxViewSet, basename='tax-test')
+router.register(r'catalog', CatalogViewSet, basename='catalog')
+router.register(r'restaurant-profile', RestaurantCatalogViewSet, basename='restaurant-profile')
 
 
 urlpatterns = [

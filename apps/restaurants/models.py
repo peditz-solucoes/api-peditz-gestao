@@ -92,6 +92,9 @@ class Restaurant(TimeStampedModel, UUIDModel):
     photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
     category = models.ForeignKey(RestauratCategory, on_delete=models.SET_NULL, related_name='restaurants', null=True, blank=True)
     open = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)
+    open_time = models.TimeField(blank=True, null=True)
+    close_time = models.TimeField(blank=True, null=True)
     def __str__(self):
         return self.title
 
@@ -234,7 +237,7 @@ class ProductComplementItem(TimeStampedModel, UUIDModel):
         ProductComplementCategory, on_delete=models.CASCADE, related_name='complement_items')
 
     def __str__(self):
-        return f'{self.complementCategory.title} | {self.title}'
+        return f' {self.complementCategory.product.title} | {self.complementCategory.title} | {self.title} | R$ {self.price}'
     
 class Table(TimeStampedModel, UUIDModel):
     class Meta:
@@ -252,6 +255,35 @@ class Table(TimeStampedModel, UUIDModel):
     def __str__(self):
         return self.title
     
+class ProductPrice(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Product Price')
+        verbose_name_plural = _('Product Prices')
+        ordering = ['product__title']
+    
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    tag = models.CharField(max_length=255, blank=True, null=True)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='prices')
+
+    def __str__(self):
+        return self.product.title + ' | R$ ' + str(self.price)
+    
+class ProductComplementPrice(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Product complemnet Price')
+        verbose_name_plural = _('Product complement Prices')
+        ordering = ['product_complement_item__title']
+    
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    product_price = models.ForeignKey(
+        ProductPrice, on_delete=models.CASCADE, related_name='complement_prices')
+    product_complement_item = models.ForeignKey(
+        ProductComplementItem, on_delete=models.CASCADE, related_name='prices')
+
+    def __str__(self):
+        return self.product_complement_item.complementCategory.product.title + " | "  + self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
+    
 class Catalog(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Catalog')
@@ -266,7 +298,8 @@ class Catalog(TimeStampedModel, UUIDModel):
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='catalogs')
     photo = models.ImageField(upload_to=upload_path_catalogs, blank=True, null=True)
-    products = models.ManyToManyField(Product, related_name='catalogs', blank=True)
+    products_prices = models.ManyToManyField(ProductPrice, related_name='catalogs', blank=True)
+    delivery = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
@@ -328,6 +361,12 @@ def auto_register(sender, instance, created, **kwargs):
                     cfop = row[18],
                 )[0]
                 product.save()
+                price = ProductPrice.objects.get_or_create(
+                    price = Decimal(row[2].replace('.', '').replace(',', '.')),
+                    product = product,
+                    tag='cardapio_digital'
+                )[0]
+                price.save()
                 print(product)
         else:
             print(f"Failed to fetch CSV file: {response.status_code}")
