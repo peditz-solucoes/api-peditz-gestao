@@ -356,8 +356,6 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='payment_methods')
 
     def save(self, *args, **kwargs):
-        if self.method and self.method != '99':
-            self.title = dict(PAYMENT_METHODS)[self.method]
         super().save(*args, **kwargs)
 
     def __str__(self):
