@@ -345,7 +345,7 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Payment Method')
         verbose_name_plural = _('Payment Methods')
-        unique_together = ['restaurant', 'title', 'method']
+        unique_together = ['restaurant', 'title']
     method = models.CharField(_('Method'), max_length=255, choices=PAYMENT_METHODS, default=PAYMENT_METHODS[0][0])
     title = models.CharField(_('Title'), max_length=255, blank=True, null=True)
     active = models.BooleanField(_('Active'), default=True)
