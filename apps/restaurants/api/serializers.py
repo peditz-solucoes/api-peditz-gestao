@@ -288,6 +288,7 @@ class ProductCatalogSerializer(serializers.ModelSerializer):
             "listed",
             "type_of_sale",
             "codigo_produto",
+            'photo',
             "product_category",
             "complement_categories"
         ]
