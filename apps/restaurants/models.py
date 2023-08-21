@@ -13,6 +13,7 @@ from apps.user.models import User
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
 from django.db.models.signals import post_save
 from django.db import transaction
+
 def upload_path(instance, filname):
     return '/'.join(['restaurants', str(instance.slug), filname])
 
@@ -126,12 +127,10 @@ class Employer(TimeStampedModel, UUIDModel):
         verbose_name = _('Employee')
         verbose_name_plural = _('Employees')
         unique_together = (
-            ('cpf', 'restaurant'), 
-            ('phone', 'restaurant'), 
             ('code', 'restaurant')
         )
     
-    cpf = BRCPFField(verbose_name=_('CPF'))
+    cpf = BRCPFField(verbose_name=_('CPF'), blank=True, null=True)
     address = models.CharField(max_length=255)
     phone = PhoneNumberField(verbose_name=_(
         'Phone'), blank=True, unique=True, region='BR')
@@ -267,7 +266,7 @@ class ProductPrice(TimeStampedModel, UUIDModel):
         Product, on_delete=models.CASCADE, related_name='prices')
 
     def __str__(self):
-        return self.product.title + ' | R$ ' + str(self.price)
+        return self.product.product_category.restaurant.title + " | " +  self.tag + " | " + self.product.title + ' | R$ ' + str(self.price)
     
 class ProductComplementPrice(TimeStampedModel, UUIDModel):
     class Meta:
@@ -282,7 +281,7 @@ class ProductComplementPrice(TimeStampedModel, UUIDModel):
         ProductComplementItem, on_delete=models.CASCADE, related_name='prices')
 
     def __str__(self):
-        return self.product_complement_item.complementCategory.product.title + " | "  + self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
+        return self.product_complement_item.complementCategory.product.product_category.restaurant.title + " | " + self.product_complement_item.complementCategory.product.title + " | "  + self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
     
 class Catalog(TimeStampedModel, UUIDModel):
     class Meta:
