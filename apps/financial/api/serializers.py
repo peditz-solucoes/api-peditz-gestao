@@ -300,12 +300,37 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
         order_group.order_items = order_items_output
+        json_r = {
+            "id": order_group.id,
+            "bill": {
+                "id": order_group.bill.id or None,
+                "client_name": order_group.bill.client_name,
+                "table": order_group.bill.table,
+                "number": order_group.bill.number or None,
+            },
+            "status": {
+                "id": order_group.status.id,
+                "status": order_group.status.status
+            },
+            "created": str(order_group.created),
+            "collaborator_name": order_group.collaborator_name,
+            "collaborator": EmployerOrderSerializer(order_group.collaborator).data,
+            "total": str(order_group.total),
+            "order_number": order_group.order_number,
+            "restaurant": {
+                "id": validated_data.get('restaurant', None).id or None,
+                "title": validated_data.get('restaurant', None).title or None,
+            },
+            "type": order_group.type,
+            "order_items": order_group.order_items
+        }
+
         if validated_data.get('from_app', False):
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "pedidos_%s" % restaurant.id,
-                {"type": "att",
-                    "message": json.dumps(order_group, cls=UUIDEncoder)
+                {"type": "order",
+                    "message": json.dumps(json_r, cls=UUIDEncoder)
                 }
             )
         return order_group
