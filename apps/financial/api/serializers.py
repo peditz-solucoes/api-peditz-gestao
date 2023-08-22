@@ -299,15 +299,15 @@ class OrderGroupSerialier(serializers.ModelSerializer):
 
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
+        order_group.order_items = order_items_output
         if validated_data.get('from_app', False):
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 "pedidos_%s" % restaurant.id,
                 {"type": "att",
-                    "message": json.dumps(order_items_output, cls=UUIDEncoder)
+                    "message": json.dumps(order_group, cls=UUIDEncoder)
                 }
             )
-        order_group.order_items = order_items_output
         return order_group
 
 class ComplementItemSerializer(serializers.ModelSerializer):

@@ -45,3 +45,10 @@ class PedidosConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'message': message
         }))
+        
+    async def order(self, event):
+        message = event['message']
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'order': message
+        }))
