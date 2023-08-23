@@ -302,12 +302,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
         order_group.order_items = order_items_output
         json_r = {
             "id": order_group.id,
-            "bill": {
-                "id": order_group.bill.id or None,
-                "client_name": order_group.bill.client_name,
-                "table": TableBillSerializer(order_group.bill.table).data or None,
-                "number": order_group.bill.number or None,
-            },
+            "bill": BillSerializer(order_group.bill).data,
             "status": {
                 "id": order_group.status.id,
                 "status": order_group.status.status
