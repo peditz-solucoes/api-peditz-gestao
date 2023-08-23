@@ -305,7 +305,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             "bill": {
                 "id": order_group.bill.id or None,
                 "client_name": order_group.bill.client_name,
-                "table": order_group.bill.table,
+                "table": TableBillSerializer(order_group.bill.table).data or None,
                 "number": order_group.bill.number or None,
             },
             "status": {
