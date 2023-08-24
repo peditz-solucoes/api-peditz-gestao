@@ -97,7 +97,7 @@ class ProductComplentViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product', 'active']
     def get_queryset(self):
-        return  ProductComplementCategory.objects.filter()
+        return  ProductComplementCategory.objects.filter().order_by('order')
     
 class ProductComplentItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementItemSerializer
