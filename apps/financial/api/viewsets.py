@@ -47,8 +47,6 @@ class BillViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.restaurants:
-            return Bill.objects.filter(cashier__restaurant=user.restaurants)
         if user.employer is not None: 
             return Bill.objects.filter(cashier__restaurant=user.employer.restaurant)
         return Bill.objects.none()
