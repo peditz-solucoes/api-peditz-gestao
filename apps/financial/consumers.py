@@ -18,12 +18,12 @@ class PedidosConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'pedidos_%s' % self.room_name
 
-        is_occupied = await self.check_room_occupation(self.room_group_name)
-        if is_occupied:
-            # Fecha a conexão se o room_name já estiver ocupado
-            await self.close()
-            return
-        await self.mark_room_as_occupied(self.room_group_name)
+        # is_occupied = await self.check_room_occupation(self.room_group_name)
+        # if is_occupied:
+        #     # Fecha a conexão se o room_name já estiver ocupado
+        #     await self.close()
+        #     return
+        # await self.mark_room_as_occupied(self.room_group_name)
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
