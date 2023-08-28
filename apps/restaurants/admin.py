@@ -101,6 +101,7 @@ class ProductAdmin(admin.ModelAdmin):
                 'icms_aliquota',
                 'icms_base_calculo',
                 'icms_modalidade_base_calculo',
+                'calc_icms_base_calculo',
             ],
             'classes': ['collapse']
         }),

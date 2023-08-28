@@ -18,6 +18,8 @@ class TaxSerializer(serializers.ModelSerializer):
     tax_items = serializers.JSONField(write_only=True)
     payments_methods = serializers.JSONField(write_only=True)
     response = serializers.JSONField(read_only=True)
+    cnpj = serializers.CharField(write_only=True, allow_null=True, required=False)
+    cpf = serializers.CharField(write_only=True, allow_null=True, required=False)
     class Meta:
         model = Tax
         fields = '__all__'
@@ -81,13 +83,16 @@ class TaxSerializer(serializers.ModelSerializer):
 	        "items": [],
 	        "formas_pagamento": []
         }
+        if validated_data.get('cnpj', None)  is not None:
+            note_values['cnpj_destinatario'] = validated_data['cnpj']
+        if validated_data.get('cpf', None) is not None:
+            note_values['cpf_destinatario'] = validated_data['cpf']
 
         resp = focus_api.send_nfce(
             data=note_values,
             items=validated_data['tax_items'],
             payments_data=validated_data['payments_methods'],
         )
-        print(resp)
         tax.data_emissao = datetime.now(fuso_horario).strftime("%Y-%m-%d %H:%M:%S")
         tax.emited = True
         tax.ref = tax.id

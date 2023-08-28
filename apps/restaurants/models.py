@@ -194,6 +194,7 @@ class Product(TimeStampedModel, UUIDModel):
     icms_situacao_tributaria =  models.CharField(blank=True, null=True, max_length=255, choices=ICMS_SITUACAO_TRIBUTARIA)
     icms_aliquota = models.DecimalField(blank=True, null=True, max_digits=5, decimal_places=2, help_text='Alíquota do ICMS. Deve estar entre 0 e 100.')
     icms_base_calculo = models.DecimalField(blank=True, null=True, max_digits=10, decimal_places=2, help_text='Base de cálculo do ICMS. Normalmente é igual ao valor_bruto.')
+    calc_icms_base_calculo = models.BooleanField(default=False, help_text='Se marcado, o valor da base de cálculo do ICMS será calculado automaticamente.')
     icms_modalidade_base_calculo = models.CharField(blank=True, null=True, max_length=255, choices=ICMS_MODALIDADE_BASE_CALCULO)
     def __str__(self):
         return self.title
