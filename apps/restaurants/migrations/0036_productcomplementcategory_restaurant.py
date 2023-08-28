@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='productcomplementcategory',
             name='restaurant',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.CASCADE, related_name='complement_categories', to='restaurants.restaurant'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='complement_categories', to='restaurants.restaurant', null=True),
             preserve_default=False,
         ),
     ]
