@@ -180,11 +180,8 @@ class Product(TimeStampedModel, UUIDModel):
     listed = models.BooleanField(default=True)
     photo = models.ImageField(upload_to=upload_path_product, blank=True, null=True, verbose_name=_('photo'))
     type_of_sale = models.CharField(max_length=3, choices=PRODUCT_TYPES, default='UN')
-    product_category = models.ForeignKey(
-        ProductCategory, on_delete=models.CASCADE, related_name='products')
-    printer = models.ForeignKey(
-        Printer, on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
-    
+    product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, related_name='products')
+    printer = models.ForeignKey(Printer, on_delete=models.SET_NULL, related_name='products', null=True, blank=True)
     codigo_ncm = models.CharField(max_length=255, blank=True, null=True, help_text='Código NCM do produto (8 dígitos).')
     codigo_produto = models.CharField(verbose_name=_('Product Code'), max_length=255, blank=True, null=True)
     cfop = models.CharField(max_length=255, blank=True, null=True, help_text='Código Fiscal de Operações e Prestações (4 dígitos).')
@@ -221,11 +218,11 @@ class ProductComplementCategory(TimeStampedModel, UUIDModel):
     ))
     max_value = models.IntegerField(default=0)
     min_value = models.IntegerField(default=0)
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name='complement_categories')
-    
+    products = models.ManyToManyField(Product, related_name='complement_categories')
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='complement_categories')
     def __str__(self):
-        return self.title + " | " + self.product.title
+        return self.title + " | "  + self.restaurant.title
 
 class ProductComplementItem(TimeStampedModel, UUIDModel):
     class Meta:
@@ -242,7 +239,7 @@ class ProductComplementItem(TimeStampedModel, UUIDModel):
         ProductComplementCategory, on_delete=models.CASCADE, related_name='complement_items')
 
     def __str__(self):
-        return f' {self.complementCategory.product.title} | {self.complementCategory.title} | {self.title} | R$ {self.price}'
+        return f'{self.complementCategory.title} | {self.title} | R$ {self.price}'
     
 class Table(TimeStampedModel, UUIDModel):
     class Meta:
@@ -287,7 +284,7 @@ class ProductComplementPrice(TimeStampedModel, UUIDModel):
         ProductComplementItem, on_delete=models.CASCADE, related_name='prices')
 
     def __str__(self):
-        return self.product_complement_item.complementCategory.product.product_category.restaurant.title + " | " + self.product_complement_item.complementCategory.product.title + " | "  + self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
+        return self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
     
 class Catalog(TimeStampedModel, UUIDModel):
     class Meta:

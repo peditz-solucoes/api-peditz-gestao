@@ -69,7 +69,7 @@ class ProductAdmin(admin.ModelAdmin):
                     ('listed', ChoiceDropdownFilter)
                    ]
     save_on_top = True
-    inlines = [ProductPriceInline, ExtraFieldsInline]
+    inlines = [ProductPriceInline]
     fieldsets = [
         (_('Product'), {
             'fields': [
