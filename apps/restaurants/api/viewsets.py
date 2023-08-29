@@ -95,7 +95,7 @@ class ProductComplentViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product', 'active']
+    filterset_fields = ['products', 'active']
     def get_queryset(self):
         return  ProductComplementCategory.objects.filter().order_by('order')
     

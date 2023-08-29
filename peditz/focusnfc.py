@@ -1,8 +1,10 @@
 from datetime import datetime
+from decimal import Decimal
 import os
 import pytz
 import requests
 from requests.auth import HTTPBasicAuth
+from apps.financial.models import Order
 from apps.restaurants.models import Product
 from rest_framework import serializers
 from django.db import transaction
@@ -34,13 +36,18 @@ class FocusClientApi:
 
         for index, item in enumerate(items, 1):
             try:
-                product = Product.objects.get(id=item['product_id'])
+                order = Order.objects.get(id=item['product_id'])
+                product = order.product
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":f"Produto {item['product_id']} produto não existe."})
             for attr, description in attributes_to_check:
                 if getattr(product, attr) is None:
                     raise serializers.ValidationError({"detail": f"Produto {product.title} não possui {description}."})
-            icm_base_calculation = product.icms_base_calculo * item['quantity']
+            icm_base_calculation = product.icms_base_calculo * Decimal(
+                round(item['quantity'], 3)
+            )
+            if product.calc_icms_base_calculo:
+                icm_base_calculation = (product.icms_base_calculo/100 * order.total)
             icms_value = icm_base_calculation * (product.icms_aliquota/100)
             icms_value = str(round(icms_value, 2))
             icm_base_calculation = str(round(icm_base_calculation, 2))
@@ -50,11 +57,11 @@ class FocusClientApi:
                 "quantidade_comercial": str(item['quantity']),
                 "quantidade_tributavel": str(item['quantity']),
                 "cfop": product.cfop,
-                "valor_unitario_tributavel": str(product.valor_unitario_tributavel),
-                "valor_unitario_comercial": str(product.valor_unitario_comercial),
+                "valor_unitario_tributavel": str(order.total/order.quantity),
+                "valor_unitario_comercial": str(order.total/order.quantity),
                 "valor_desconto": "0.00",
                 "descricao": product.title,
-                "valor_bruto": str(product.valor_unitario_comercial * item['quantity']),
+                "valor_bruto": str(order.total),
                 "codigo_produto": product.codigo_produto,
                 "icms_origem": product.icms_origem,
                 "icms_situacao_tributaria": product.icms_situacao_tributaria,
@@ -81,7 +88,6 @@ class FocusClientApi:
             payments.append(payment)
 
         note_values['formas_pagamento'] = payments
-
         url = f'{self.base_url}/v2/nfce?ref={note_values["ref"]}'
         response = requests.post(f'{url}', json=note_values, headers=self.headers, auth=HTTPBasicAuth(self.api_key, ''))
         if response.status_code < 300:

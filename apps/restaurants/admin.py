@@ -69,7 +69,7 @@ class ProductAdmin(admin.ModelAdmin):
                     ('listed', ChoiceDropdownFilter)
                    ]
     save_on_top = True
-    inlines = [ProductPriceInline, ExtraFieldsInline]
+    inlines = [ProductPriceInline]
     fieldsets = [
         (_('Product'), {
             'fields': [
@@ -101,6 +101,7 @@ class ProductAdmin(admin.ModelAdmin):
                 'icms_aliquota',
                 'icms_base_calculo',
                 'icms_modalidade_base_calculo',
+                'calc_icms_base_calculo',
             ],
             'classes': ['collapse']
         }),

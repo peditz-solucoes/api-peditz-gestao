@@ -198,12 +198,26 @@ class ProductComplementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductComplementCategory
-        fields = ['id', 'title', 'order', 'active', 'input_type', 'business_rules', 'max_value', 'min_value', 'product', 'complement_items']
-    
+        fields = ['id', 'title', 'order', 'active', 'input_type', 'business_rules', 'max_value', 'min_value', 'products', 'complement_items', 'restaurant']
+        read_only_fields = ('restaurant',)
     def get_complement_items(self, obj):
         items = obj.complement_items.filter(active=True)
         serializer = ProductComplementItemSerializer(items, many=True)
         return serializer.data
+    
+    def save(self, **kwargs):
+        if self.instance is None:
+            try:
+                restaurant = Restaurant.objects.get(owner=self.context['request'].user)
+            except Restaurant.DoesNotExist:
+                restaurant = None
+                try:
+                    employer = Employer.objects.get(user=self.context['request'].user)
+                    restaurant = employer.restaurant
+                except Employer.DoesNotExist:
+                    raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+            self.validated_data['restaurant'] = restaurant
+        return super().save(**kwargs)
     
 
 class BillSerializer(serializers.ModelSerializer):
