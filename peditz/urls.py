@@ -38,7 +38,8 @@ from apps.financial.api.viewsets import (
     OrderGroupListViewSet,
     DeleteOrderViewSet,
     PaymentMethodViewSet,
-    PaymentGroupViewSet
+    PaymentGroupViewSet,
+    CloseBillViewSet
 )
 
 import os
@@ -74,6 +75,7 @@ router.register(r'tax', TaxViewSet, basename='tax')
 router.register(r'tax-test', TestTaxViewSet, basename='tax-test')
 router.register(r'catalog', CatalogViewSet, basename='catalog')
 router.register(r'restaurant-profile', RestaurantCatalogViewSet, basename='restaurant-profile')
+router.register(r'close-bill', CloseBillViewSet, basename='close-bill')
 
 
 urlpatterns = [

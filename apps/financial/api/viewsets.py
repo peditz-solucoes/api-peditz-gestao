@@ -17,6 +17,7 @@ from .serializers import (
     DeleteOrderSerializer,
     PaymentsMethodSerializer,
     PaymentGroupSerializer,
+    CloseBillSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -143,3 +144,11 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
                 return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
             except AttributeError:
                 return PaymentGroup.objects.none()
+            
+class CloseBillViewSet(viewsets.ModelViewSet):
+    serializer_class = CloseBillSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post']
+
+    def get_queryset(self):
+        return Bill.objects.none()

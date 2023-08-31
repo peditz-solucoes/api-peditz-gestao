@@ -496,3 +496,29 @@ class ListPaymentsGroupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentGroup
         fields = '__all__'
+
+
+class CloseBillSerializer(serializers.ModelSerializer):
+    operator_code = serializers.CharField(write_only=True)
+    bill_id = serializers.PrimaryKeyRelatedField(queryset=Bill.objects.filter(open=True), write_only=True)
+    message = serializers.CharField(read_only=True)
+    class Meta:
+        model = Bill
+        fields = ['id', 'operator_code', 'bill_id', 'message']
+        read_only_fields = ['message', 'id']
+
+    def create(self, validated_data):
+        try:
+            employer = Employer.objects.get(code=validated_data.get('operator_code', None)) 
+            if employer.role != 'GERENTE':
+                raise serializers.ValidationError({"detail":"Este usuário não é gerente."})
+        except Employer.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Código de operador inválido."})
+        try:
+            bill = Bill.objects.get(id=validated_data.get('bill_id', None).id)
+        except Bill.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Conta não encontrada."})
+        bill.open = False
+        bill.save()
+        validated_data['message'] = 'Conta fechada com sucesso.'
+        return validated_data
