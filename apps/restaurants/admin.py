@@ -45,10 +45,9 @@ class ResstaurantAdmin(admin.ModelAdmin):
 
 @admin.register(Employer)
 class EmployerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'office', 'restaurant', 'sallary', 'active']
+    list_display = ['user', 'code','office', 'restaurant', 'sallary', 'active']
     search_fields = ['user__first_name', 'user__last_name', 'user__email', 'office', 'restaurant__title']
-    list_filter = [('restaurant', ChoiceDropdownFilter), ('office', DropdownFilter), 'sallary']
-    pass
+    list_filter = [('restaurant__title', DropdownFilter), ('office', DropdownFilter), 'sallary']
 
 class ExtraFieldsInline(admin.TabularInline):
     model = ProductComplementCategory
@@ -168,3 +167,5 @@ class AutoRegisterAdmin(admin.ModelAdmin):
 @admin.register(ProductPrice)
 class ProductPriceAdmin(admin.ModelAdmin):
     inlines = [ProductComplementPriceInline,]
+    list_display = ['product', 'price', 'tag']
+    list_filter = ['product__product_category__restaurant', ('tag', ChoiceDropdownFilter)]
