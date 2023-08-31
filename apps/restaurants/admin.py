@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister, ProductPrice, ProductComplementPrice
+from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister, ProductPrice, ComplementPrice
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -51,11 +51,11 @@ class EmployerAdmin(admin.ModelAdmin):
 
 class ExtraFieldsInline(admin.TabularInline):
     model = ProductComplementCategory
+class ComplementPriceInline(admin.TabularInline):
+    model = ComplementPrice
 
 class ProductPriceInline(admin.TabularInline):
     model = ProductPrice
-class ProductComplementPriceInline(admin.TabularInline):
-    model = ProductComplementPrice
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'price', 'product_category', 'active', 'listed', 'order']
@@ -135,7 +135,7 @@ class CatalogAdmin(admin.ModelAdmin):
     list_display_links = ['title', 'restaurant']
     search_fields = ['title'],
     list_filter = [('restaurant', RelatedDropdownFilter), ('active', ChoiceDropdownFilter)]
-    filter_horizontal = ['products_prices']
+    filter_horizontal = ['products_prices', 'complement_prices']
     save_on_top = True
     pass
 
@@ -152,7 +152,7 @@ class ProductComplementCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductComplementItem)
 class ProductComplementItemAdmin(admin.ModelAdmin):
-    pass
+    inlines = [ComplementPriceInline,]
 
 
 @admin.register(Sidebar)
@@ -166,6 +166,6 @@ class AutoRegisterAdmin(admin.ModelAdmin):
 
 @admin.register(ProductPrice)
 class ProductPriceAdmin(admin.ModelAdmin):
-    inlines = [ProductComplementPriceInline,]
+    # inlines = [ProductComplementPriceInline,]
     list_display = ['product', 'price', 'tag']
     list_filter = ['product__product_category__restaurant', ('tag', ChoiceDropdownFilter)]

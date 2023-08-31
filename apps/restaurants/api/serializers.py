@@ -6,7 +6,6 @@ from apps.financial.models import Bill
 from apps.restaurants.models import( 
     Printer,
     Product,
-    ProductComplementPrice,
     ProductPrice, 
     Restaurant, 
     RestauratCategory,
@@ -17,6 +16,7 @@ from apps.restaurants.models import(
     Sidebar,
     Table,
     Catalog,
+    ComplementPrice,
 )
 from django.db import transaction
 from apps.user.api.serializers import UserSerializer
@@ -309,7 +309,7 @@ class ProductCatalogSerializer(serializers.ModelSerializer):
 
 class ProductComplementPriceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProductComplementPrice
+        model = ComplementPrice
         fields = [
             'id',
             'price',
@@ -317,7 +317,6 @@ class ProductComplementPriceSerializer(serializers.ModelSerializer):
         ]
 
 class ProductPriceSerializer(serializers.ModelSerializer):
-    complement_prices = ProductComplementPriceSerializer(many=True, read_only=True)
     product = ProductCatalogSerializer(read_only=True)
     class Meta:
         model = ProductPrice
@@ -325,11 +324,10 @@ class ProductPriceSerializer(serializers.ModelSerializer):
             'id',
             'price',
             'product',
-            'complement_prices',
         ]
 class CatalogSerializer(serializers.ModelSerializer):
     products_prices = serializers.SerializerMethodField(read_only=True)
-    
+    complement_prices = ProductComplementPriceSerializer(many=True, read_only=True)
     class Meta:
         model = Catalog
         fields = [
@@ -339,6 +337,7 @@ class CatalogSerializer(serializers.ModelSerializer):
             'slug',
             'photo',
             'delivery',
+            'complement_prices',
             'products_prices',
         ]
 
