@@ -272,21 +272,22 @@ class ProductPrice(TimeStampedModel, UUIDModel):
     def __str__(self):
         return self.product.product_category.restaurant.title + " | " +  self.tag + " | " + self.product.title + ' | R$ ' + str(self.price)
     
-class ProductComplementPrice(TimeStampedModel, UUIDModel):
+
+class ComplementPrice(TimeStampedModel, UUIDModel):
     class Meta:
-        verbose_name = _('Product complemnet Price')
-        verbose_name_plural = _('Product complement Prices')
+        verbose_name = _('Complemnet Price')
+        verbose_name_plural = _('Complement Prices')
         ordering = ['product_complement_item__title']
     
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    product_price = models.ForeignKey(
-        ProductPrice, on_delete=models.CASCADE, related_name='complement_prices')
+    tag = models.CharField(max_length=255, blank=True, null=True)
     product_complement_item = models.ForeignKey(
         ProductComplementItem, on_delete=models.CASCADE, related_name='prices')
 
     def __str__(self):
-        return self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
+        return self.product_complement_item.complementCategory.restaurant.title + ' | ' + self.product_complement_item.complementCategory.title + ' | '+ self.product_complement_item.title + ' | R$ ' + str(self.price)
     
+
 class Catalog(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Catalog')
@@ -302,6 +303,7 @@ class Catalog(TimeStampedModel, UUIDModel):
         Restaurant, on_delete=models.CASCADE, related_name='catalogs')
     photo = models.ImageField(upload_to=upload_path_catalogs, blank=True, null=True)
     products_prices = models.ManyToManyField(ProductPrice, related_name='catalogs', blank=True)
+    complement_prices = models.ManyToManyField(ComplementPrice, related_name='catalogs', blank=True)
     delivery = models.BooleanField(default=False)
 
     def __str__(self):
