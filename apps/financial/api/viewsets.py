@@ -33,10 +33,11 @@ class CashierViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        if user.restaurants:
-            return Cashier.objects.filter(restaurant=user.restaurants)
-        if user.employer is not None:
+        try: 
             return Cashier.objects.filter(restaurant=user.employer.restaurant)
+        except AttributeError:
+            if user.restaurants:
+                return Cashier.objects.filter(restaurant=user.restaurants)
         return Cashier.objects.none()
     
 class BillViewSet(viewsets.ModelViewSet):
