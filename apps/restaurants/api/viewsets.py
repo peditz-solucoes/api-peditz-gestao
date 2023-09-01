@@ -84,10 +84,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         try:
-            return  Product.objects.filter(product_category__restaurant=user.employer.restaurant)
+            return  Product.objects.filter(product_category__restaurant=user.employer.restaurant).order_by('product_category__order', 'product_category__title','order', 'title')
         except AttributeError:
             try:
-                return  Product.objects.filter(product_category__restaurant=user.restaurants)
+                return  Product.objects.filter(product_category__restaurant=user.restaurants).order_by('product_category__order', 'product_category__title','order', 'title')
             except AttributeError:
                 return Product.objects.none()
 

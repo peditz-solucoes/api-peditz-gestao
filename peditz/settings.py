@@ -220,7 +220,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
-        'rest_framework.authentication.SessionAuthentication',  
+        # 'rest_framework.authentication.SessionAuthentication',  
 
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
@@ -324,4 +324,14 @@ JWT_AUTH = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
 }
