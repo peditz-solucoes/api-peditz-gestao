@@ -3,7 +3,6 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from uuid import UUID
-from django.core.cache import cache
 
 
 
@@ -18,12 +17,6 @@ class PedidosConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'pedidos_%s' % self.room_name
-        is_connected = cache.get(f"connected_{self.room_name}")
-        if is_connected:
-            await self.close()
-            return
-
-        cache.set(f"connected_{self.room_name}", 1)
 
         # Join room group
         await self.channel_layer.group_add(
@@ -42,12 +35,10 @@ class PedidosConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         # Leave room group
-        cache.delete(f"connected_{self.room_name}")
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
-
 
     async def att(self, event):
         message = event['message']
