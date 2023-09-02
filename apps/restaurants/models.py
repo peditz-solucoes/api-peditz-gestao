@@ -138,13 +138,13 @@ class Employer(TimeStampedModel, UUIDModel):
     cpf = BRCPFField(verbose_name=_('CPF'), blank=True, null=True)
     address = models.CharField(max_length=255, blank=True, null=True)
     phone = PhoneNumberField(verbose_name=_(
-        'Phone'), blank=True, unique=True, region='BR')
+        'Phone'), blank=True, default='', region='BR')
     office = models.CharField(max_length=255, blank=True, null=True)
     sallary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     active = models.BooleanField(default=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='employers')
-    code = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=255)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employer')
     role = models.CharField(max_length=255, choices=EMPLOYER_ROLE_CHOICES, default='FUNCIONARIO')
 
