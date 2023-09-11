@@ -13,6 +13,7 @@ from .models import (
     PaymentGroup,
 )
 # Register your models here.
+from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter, SimpleDropdownFilter
 
 
 class OderComplementsFieldsInline(admin.TabularInline):
@@ -36,6 +37,8 @@ class CashierAdmin(admin.ModelAdmin):
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
     inlines = [OrderGroupInline]
+    list_display = ['number', 'open', 'opened_by_name', 'cashier', 'table', 'created']
+    list_filter = [('open', DropdownFilter), ('cashier__restaurant__title', DropdownFilter), ('table__title', DropdownFilter), ('cashier', RelatedDropdownFilter)]
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -63,6 +66,8 @@ class OrderStatusAdmin(admin.ModelAdmin):
 @admin.register(OrderGroup)
 class OrderGroupAdmin(admin.ModelAdmin):
     readonly_fields = ['id', 'order_number', 'collaborator_name']
+    list_display = ['order_number', 'collaborator_name', 'total', 'created', 'status']
+    list_filter = [('status', DropdownFilter), ('restaurant', RelatedDropdownFilter), ('bill__table__title', DropdownFilter), ('bill__cashier', RelatedDropdownFilter)]
     inlines = [OderFieldsInline]
 
 @admin.register(TakeoutOrder)
