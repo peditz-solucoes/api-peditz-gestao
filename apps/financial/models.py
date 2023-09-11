@@ -66,8 +66,6 @@ class Cashier(TimeStampedModel, UUIDModel):
             self.opened_by_name = self.opened_by.get_full_name()
         if self.closed_by:
             self.closed_by_name = self.closed_by.get_full_name()
-        if not self.open:
-            self.closed_at = self.modified
         super().save(*args, **kwargs)
 
     def __str__(self):

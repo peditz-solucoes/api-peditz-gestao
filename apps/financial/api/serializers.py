@@ -223,7 +223,9 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
         validated_data['restaurant'] = restaurant
         validated_data['collaborator'] = employer
-        validated_data['status'] = OrderStatus.objects.all().order_by('order').first()
+        validated_data['status'] = OrderStatus.objects.filter(
+            restaurant=restaurant,
+        ).order_by('order').first()
         orders = validated_data.get('order_items', None)
         order_group = super().create({
             'bill':validated_data.get('bill', None),
