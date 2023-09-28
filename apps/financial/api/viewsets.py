@@ -21,6 +21,7 @@ from .serializers import (
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
 
 
 
@@ -127,12 +128,20 @@ class PaymentGroupViewSet(viewsets.ModelViewSet):
             except AttributeError:
                 return PaymentGroup.objects.none()
             
+
+class PaymentGroupFilter(filters.FilterSet):
+    datetime_range = filters.DateTimeFromToRangeFilter(field_name='created')
+
+    class Meta:
+        model = PaymentGroup
+        fields = ['cashier', 'type', 'datetime_range']
+            
 class ListPaymentGroupViewSet(viewsets.ModelViewSet):
     serializer_class = ListPaymentsGroupsSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['cashier', 'type']
+    filterset_class = PaymentGroupFilter
 
     def get_queryset(self):
         user = self.request.user
