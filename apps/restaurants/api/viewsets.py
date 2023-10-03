@@ -60,14 +60,14 @@ class EmployerViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.restaurants:
             return user.restaurants.employers.all()
-        if user.employer is not None:
-            return Employer.objects.filter(user=user)
+        if user.employer.role == 'GERENTE':
+            restaurant = user.employer.restaurant
+            return Employer.objects.filter(restaurants=restaurant)
         return Employer.objects.none()
     
     def create(self, request, *args, **kwargs):
-        if not Restaurant.objects.filter(owner=request.user).exists():
-            return Response({"detail": "You must be an owner of a restaurant to create an employer."}, status=status.HTTP_403_FORBIDDEN)
-
+        if request.user.employer.role != 'GERENTE':
+            return Response({"detail": "Você não tem permissão para adicionar funcionário"}, status=status.HTTP_403_FORBIDDEN)
         return super().create(request, *args, **kwargs)
     
 class ProductCategoryViewSet(viewsets.ModelViewSet):
