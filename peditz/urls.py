@@ -28,7 +28,9 @@ from apps.restaurants.api.viewsets import (
     ProductViewSet, 
     ProductComplentViewSet,
     TableViewSet,
-    UserPermissionViewSet
+    UserPermissionViewSet,
+    SidebartViewSet,
+    ProductPriceViewSet
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
@@ -76,6 +78,8 @@ router.register(r'tax-test', TestTaxViewSet, basename='tax-test')
 router.register(r'catalog', CatalogViewSet, basename='catalog')
 router.register(r'restaurant-profile', RestaurantCatalogViewSet, basename='restaurant-profile')
 router.register(r'close-bill', CloseBillViewSet, basename='close-bill')
+router.register(r'sidebar', SidebartViewSet, basename='sidebar')
+router.register(r'product-price', ProductPriceViewSet, basename='product-price')
 
 
 urlpatterns = [

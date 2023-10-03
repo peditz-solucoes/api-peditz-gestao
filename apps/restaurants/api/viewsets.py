@@ -3,12 +3,14 @@
 from rest_framework import viewsets
 from apps.restaurants.models import (
     Printer,
+    ProductPrice,
     Restaurant,
     Employer,
     ProductCategory,
     Product,
     ProductComplementCategory,
     ProductComplementItem,
+    Sidebar,
     Table,
     Catalog
 )
@@ -16,6 +18,7 @@ from .serializers import (
     CatalogSerializer,
     PrinterSerializer,
     ProductCatalogSerializer,
+    ProductPriceSerializer,
     RestaurantCatalogSerializer,
     RestaurantSerializer, 
     EmployerSerializer, 
@@ -23,6 +26,7 @@ from .serializers import (
     ProductSerializer,
     ProductComplementSerializer,
     ProductComplementItemSerializer,
+    SidebarSerializer,
     TableSerializer,
     UserPermissionsSerializer,
 )
@@ -97,7 +101,14 @@ class ProductComplentViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['products', 'active']
     def get_queryset(self):
-        return  ProductComplementCategory.objects.filter().order_by('order')
+        user = self.request.user
+        try:
+            return  ProductComplementCategory.objects.filter(restaurant=user.employer.restaurant).order_by('order')
+        except AttributeError:
+            try:
+                return  ProductComplementCategory.objects.filter(restaurant=user.restaurants).order_by('order')
+            except AttributeError:
+                return ProductComplementCategory.objects.none()
     
 class ProductComplentItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementItemSerializer
@@ -173,5 +184,30 @@ class RestaurantCatalogViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Restaurant.objects.filter(active=True)
+    
+class SidebartViewSet(viewsets.ModelViewSet):
+    serializer_class = SidebarSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get']
+
+    def get_queryset(self):
+        return Sidebar.objects.all()
+    
+class ProductPriceViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductPriceSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            return  ProductPrice.objects.filter(product__product_category__restaurant=user.employer.restaurant).order_by('product__product_category__title','product__order', 'product__title')
+        except AttributeError:
+            try:
+                return  ProductPrice.objects.filter(product__product_category__restaurant=user.restaurants).order_by('product__product_category__title', 'product__order', 'product__title')
+            except AttributeError:
+                return Product.objects.none()
 
 

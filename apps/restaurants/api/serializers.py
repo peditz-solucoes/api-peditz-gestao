@@ -92,6 +92,16 @@ class EmployerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         try:
+            employer_c = Employer.objects.get(user=self.context['request'].user)
+        except Employer.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Você não é dono de nenhum restaurante."})
+        restaurant = employer_c.restaurant
+        if restaurant is not None:
+            if Employer.objects.filter(code=validated_data['code'], restaurant=restaurant).exists():
+                raise serializers.ValidationError({"detail":"Código de operador já existe!"})
+        if User.objects.filter(email=user_data['email']).exists():
+            raise serializers.ValidationError({"detail":"Email já cadastrado!"})
+        try:
             user = User.objects.create_user(
                 username=user_data['email'],
                 email=user_data['email'],
@@ -101,10 +111,20 @@ class EmployerSerializer(serializers.ModelSerializer):
             )
         except Exception as e:
             raise serializers.ValidationError({"detail": str(e)})
-        restaurant = Restaurant.objects.filter(owner=self.context['request'].user).first()
-
         if restaurant is not None:
-            employer = Employer.objects.create(user=user, restaurant=restaurant, **validated_data)
+            employer = Employer.objects.create(
+                user=user, 
+                restaurant=restaurant,
+                cpf=validated_data.get('cpf', ''),
+                code=validated_data.get('code', ''),
+                address=validated_data.get('address', ''),
+                phone=validated_data.get('phone', ''),
+                office=validated_data.get('office', ''),
+                sallary=validated_data.get('sallary', 0),
+                role=validated_data.get('role', ''),
+            )
+            employer.sidebar_permissions.set(validated_data.get('sidebar_permissions', []))
+            employer.save()
             return employer
 
         raise serializers.ValidationError({"detail":"The user is not an owner of any restaurant."})
@@ -316,15 +336,16 @@ class ProductComplementPriceSerializer(serializers.ModelSerializer):
             'product_complement_item',
         ]
 
-class ProductPriceSerializer(serializers.ModelSerializer):
+class ProductPriceListSerializer(serializers.ModelSerializer):
     product = ProductCatalogSerializer(read_only=True)
     class Meta:
         model = ProductPrice
-        fields = [
-            'id',
-            'price',
-            'product',
-        ]
+        fields = '__all__'
+class ProductPriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductPrice
+        fields = '__all__'
+
 class CatalogSerializer(serializers.ModelSerializer):
     products_prices = serializers.SerializerMethodField(read_only=True)
     complement_prices = ProductComplementPriceSerializer(many=True, read_only=True)
@@ -343,7 +364,7 @@ class CatalogSerializer(serializers.ModelSerializer):
 
     def get_products_prices(self, obj):
         product_prices = obj.products_prices.filter(product__active=True, product__product_category__active=True, product__product_category__restaurant__active=True).order_by('product__product_category__order', 'product__product_category__title','product__order', 'product__title')
-        serializer = ProductPriceSerializer(product_prices, many=True)
+        serializer = ProductPriceListSerializer(product_prices, many=True)
         return serializer.data
     
 

@@ -115,7 +115,7 @@ class Printer(models.Model):
     footerFontSize = models.IntegerField(default=14)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='printers')
     def __str__(self):
-        return self.name
+        return self.name + ' | ' + self.restaurant.title
     
 class Sidebar(TimeStampedModel, UUIDModel):
     class Meta:
@@ -151,7 +151,7 @@ class Employer(TimeStampedModel, UUIDModel):
     sidebar_permissions = models.ManyToManyField(Sidebar, blank=True)
 
     def __str__(self):
-        return self.user.first_name
+        return self.user.first_name + ' | ' + self.restaurant.title
 
 class ProductCategory(TimeStampedModel, UUIDModel):
     class Meta:
