@@ -58,8 +58,6 @@ class EmployerViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.restaurants:
-            return user.restaurants.employers.all()
         if user.employer.role == 'GERENTE':
             restaurant = user.employer.restaurant
             return Employer.objects.filter(restaurants=restaurant)
