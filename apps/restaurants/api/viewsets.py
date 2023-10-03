@@ -60,7 +60,7 @@ class EmployerViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.employer.role == 'GERENTE':
             restaurant = user.employer.restaurant
-            return Employer.objects.filter(restaurants=restaurant)
+            return Employer.objects.filter(restaurant=restaurant)
         return Employer.objects.none()
     
     def create(self, request, *args, **kwargs):
