@@ -115,7 +115,7 @@ class Printer(models.Model):
     footerFontSize = models.IntegerField(default=14)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='printers')
     def __str__(self):
-        return self.name
+        return self.name + ' | ' + self.restaurant.title
     
 class Sidebar(TimeStampedModel, UUIDModel):
     class Meta:
@@ -151,7 +151,7 @@ class Employer(TimeStampedModel, UUIDModel):
     sidebar_permissions = models.ManyToManyField(Sidebar, blank=True)
 
     def __str__(self):
-        return self.user.first_name
+        return self.user.first_name + ' | ' + self.restaurant.title
 
 class ProductCategory(TimeStampedModel, UUIDModel):
     class Meta:
@@ -219,7 +219,7 @@ class ProductComplementCategory(TimeStampedModel, UUIDModel):
     ))
     max_value = models.IntegerField(default=0)
     min_value = models.IntegerField(default=0)
-    products = models.ManyToManyField(Product, related_name='complement_categories')
+    products = models.ManyToManyField(Product, related_name='complement_categories', blank=True, null=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='complement_categories')
     def __str__(self):

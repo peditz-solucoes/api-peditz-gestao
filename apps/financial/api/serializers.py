@@ -396,7 +396,7 @@ class DeleteOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            employer = Employer.objects.get(code=validated_data.get('operator_code', None)) 
+            employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('order_id', None).order_group.restaurant)
         except Employer.DoesNotExist:
             raise serializers.ValidationError({"detail":"Código de operador inválido."})
         print(employer)
@@ -511,7 +511,7 @@ class CloseBillSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            employer = Employer.objects.get(code=validated_data.get('operator_code', None)) 
+            employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('bill_id', None).cashier.restaurant) 
             if employer.role != 'GERENTE':
                 raise serializers.ValidationError({"detail":"Este usuário não é gerente."})
         except Employer.DoesNotExist:
