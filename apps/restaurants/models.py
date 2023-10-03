@@ -219,7 +219,7 @@ class ProductComplementCategory(TimeStampedModel, UUIDModel):
     ))
     max_value = models.IntegerField(default=0)
     min_value = models.IntegerField(default=0)
-    products = models.ManyToManyField(Product, related_name='complement_categories')
+    products = models.ManyToManyField(Product, related_name='complement_categories', blank=True)
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='complement_categories')
     def __str__(self):
