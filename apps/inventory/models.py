@@ -83,7 +83,7 @@ class ItemTransaction(TimeStampedModel, UUIDModel):
     unit_price = models.DecimalField(_('Unit Price'), max_digits=20, decimal_places=2, default=0)
     total = models.DecimalField(_('Total'), max_digits=20, decimal_places=2, default=0)
 
-    user = models.ForeignKey(User, verbose_name=_('User'), on_delete=models.SET('deleted'), related_name='item_transactions')
+    user = models.ForeignKey(User, verbose_name=_('User'), on_delete=models.SET_NULL, related_name='item_transactions', blank=True, null=True)
     user_name = models.CharField(_('User name'), max_length=255, blank=True, null=True)
     notes = models.TextField(_('Notes'), default='', blank=True, null=True)
 
@@ -93,6 +93,8 @@ class ItemTransaction(TimeStampedModel, UUIDModel):
     def save(self, *args, **kwargs):
         if not self.total:
             self.total = self.quantity * self.unit_price
+        if not self.unit_price:
+            self.unit_price = self.total / self.quantity
         if self.user:
             self.user_name = self.user.get_full_name()
         if self.quantity < 0:

@@ -46,7 +46,8 @@ from apps.financial.api.viewsets import (
 )
 from apps.inventory.api.viewsets import (
     ItemStockViewSet,
-    ItemStockCategoryViewSet
+    ItemStockCategoryViewSet,
+    ItemStockTransactionViewSet
 )
 
 import os
@@ -89,6 +90,7 @@ router.register(r'catalog-crud', CatalogCrudViewSet, basename='catalog-crud')
 router.register(r'notes', NotesViewSet, basename='notes')
 router.register(r'item-stock', ItemStockViewSet, basename='item-stock')
 router.register(r'item-stock-category', ItemStockCategoryViewSet, basename='item-stock-category')
+router.register(r'item-stock-transaction', ItemStockTransactionViewSet, basename='item-stock-transaction')
 
 
 urlpatterns = [
