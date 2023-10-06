@@ -30,7 +30,8 @@ from apps.restaurants.api.viewsets import (
     TableViewSet,
     UserPermissionViewSet,
     SidebartViewSet,
-    ProductPriceViewSet
+    ProductPriceViewSet,
+    CatalogCrudViewSet
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
@@ -43,10 +44,14 @@ from apps.financial.api.viewsets import (
     PaymentGroupViewSet,
     CloseBillViewSet
 )
+from apps.inventory.api.viewsets import (
+    ItemStockViewSet,
+    ItemStockCategoryViewSet
+)
 
 import os
 
-from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet
+from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet, NotesViewSet
 
 # 'Adiministração Peditz'
 admin.sites.AdminSite.site_header = os.environ.get('ENVIRONMENT_HEADER', 'Local Adiministração Peditz')
@@ -80,6 +85,10 @@ router.register(r'restaurant-profile', RestaurantCatalogViewSet, basename='resta
 router.register(r'close-bill', CloseBillViewSet, basename='close-bill')
 router.register(r'sidebar', SidebartViewSet, basename='sidebar')
 router.register(r'product-price', ProductPriceViewSet, basename='product-price')
+router.register(r'catalog-crud', CatalogCrudViewSet, basename='catalog-crud')
+router.register(r'notes', NotesViewSet, basename='notes')
+router.register(r'item-stock', ItemStockViewSet, basename='item-stock')
+router.register(r'item-stock-category', ItemStockCategoryViewSet, basename='item-stock-category')
 
 
 urlpatterns = [
