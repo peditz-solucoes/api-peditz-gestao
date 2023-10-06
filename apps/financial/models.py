@@ -260,7 +260,7 @@ class Order(TimeStampedModel, UUIDModel):
             self.unit_price = self.product.price
         all_groups = self.complements.all()
         if all_groups.exists():
-            self.total = (sum(group.total for group in all_groups) + self.unit_price) * float(self.quantity)
+            self.total = float((sum(group.total for group in all_groups) + self.unit_price)) * float(self.quantity)
         elif self.unit_price:
             self.total = float(self.unit_price) * float(self.quantity)
         super().save(*args, **kwargs)
