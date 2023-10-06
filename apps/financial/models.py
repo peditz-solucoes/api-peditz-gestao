@@ -269,7 +269,7 @@ class Order(TimeStampedModel, UUIDModel):
     @transaction.atomic
     def delete(self, using = None, keep_parents = False):
         super().delete(using, keep_parents)
-        self.order_group.update_total()
+        self.order_group.save()
         if self.order_group.type == 'BILL' and self.order_group.orders.count() == 0:
             self.order_group.delete()
     
