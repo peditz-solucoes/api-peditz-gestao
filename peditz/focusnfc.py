@@ -163,3 +163,13 @@ class FocusClientApi:
                 return data_resp
         raise serializers.ValidationError({"detail": response.text})
         
+    def get_notes(self, reference):
+        url = f'{self.base_url}/v2/nfce/{reference}?completa=0'
+        response = requests.get(f'{url}', headers=self.headers, auth=HTTPBasicAuth(self.api_key, ''))
+        if response.status_code < 300:
+            data = response.json()
+            data['url'] = self.base_url + data['caminho_danfe']
+            return data
+        return {
+            "detail": response.text
+        }

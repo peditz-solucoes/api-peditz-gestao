@@ -30,7 +30,8 @@ from apps.restaurants.api.viewsets import (
     TableViewSet,
     UserPermissionViewSet,
     SidebartViewSet,
-    ProductPriceViewSet
+    ProductPriceViewSet,
+    CatalogCrudViewSet
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
@@ -41,12 +42,20 @@ from apps.financial.api.viewsets import (
     DeleteOrderViewSet,
     PaymentMethodViewSet,
     PaymentGroupViewSet,
-    CloseBillViewSet
+    CloseBillViewSet,
+    TakeOutOurderViewSet
+)
+from apps.inventory.api.viewsets import (
+    ItemStockViewSet,
+    ItemStockCategoryViewSet,
+    ItemStockTransactionViewSet,
+    ItemIngredientViewSet,
+    ProductItemStockViewset
 )
 
 import os
 
-from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet
+from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet, NotesViewSet
 
 # 'Adiministração Peditz'
 admin.sites.AdminSite.site_header = os.environ.get('ENVIRONMENT_HEADER', 'Local Adiministração Peditz')
@@ -80,7 +89,14 @@ router.register(r'restaurant-profile', RestaurantCatalogViewSet, basename='resta
 router.register(r'close-bill', CloseBillViewSet, basename='close-bill')
 router.register(r'sidebar', SidebartViewSet, basename='sidebar')
 router.register(r'product-price', ProductPriceViewSet, basename='product-price')
-
+router.register(r'catalog-crud', CatalogCrudViewSet, basename='catalog-crud')
+router.register(r'notes', NotesViewSet, basename='notes')
+router.register(r'item-stock', ItemStockViewSet, basename='item-stock')
+router.register(r'item-stock-category', ItemStockCategoryViewSet, basename='item-stock-category')
+router.register(r'item-stock-transaction', ItemStockTransactionViewSet, basename='item-stock-transaction')
+router.register(r'item-ingredient', ItemIngredientViewSet, basename='item-ingredient')
+router.register(r'product-item-stock', ProductItemStockViewset, basename='product-item-stock-transaction')
+router.register(r'take-out', TakeOutOurderViewSet, basename='take-out')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -89,5 +105,4 @@ urlpatterns = [
     path('api/v1/auth/registration/', include('dj_rest_auth.registration.urls')),
     path('api/v1/auth/', include('dj_rest_auth.urls')),
     path('api/v1/account/', include('allauth.urls')),
-
 ]

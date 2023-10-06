@@ -15,6 +15,7 @@ from apps.restaurants.models import (
     Catalog
 )
 from .serializers import (
+    CatalogCrudSerializer,
     CatalogSerializer,
     PrinterSerializer,
     ProductCatalogSerializer,
@@ -205,6 +206,22 @@ class ProductPriceViewSet(viewsets.ModelViewSet):
         except AttributeError:
             try:
                 return  ProductPrice.objects.filter(product__product_category__restaurant=user.restaurants).order_by('product__product_category__title', 'product__order', 'product__title')
+            except AttributeError:
+                return Product.objects.none()
+class CatalogCrudViewSet(viewsets.ModelViewSet):
+    serializer_class = CatalogCrudSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            return  Catalog.objects.filter(restaurant=user.employer.restaurant).order_by('order','created')
+        except AttributeError:
+            try:
+                return  Catalog.objects.filter(restaurant=user.restaurants).order_by('order', 'created')
             except AttributeError:
                 return Product.objects.none()
 

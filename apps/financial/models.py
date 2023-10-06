@@ -130,7 +130,6 @@ class Bill(TimeStampedModel, UUIDModel):
 
 
 TAKEOUT_STATUS = (
-    ('OPEN', 'OPEN'),
     ('PAID', 'PAID'),
     ('CANCELED', 'CANCELED'),
 )
@@ -163,7 +162,7 @@ class OrderGroup(TimeStampedModel, UUIDModel):
     collaborator = models.ForeignKey(Employer, verbose_name=_('Colaborator'), on_delete=models.SET_NULL, related_name='orders', null=True, blank=True)
     collaborator_name = models.CharField(_('Colaborator name'), max_length=255, blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='order_groups')
-    
+    notes = models.TextField(_('Notes'), blank=True, null=True)
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.type == 'BILL' and self.bill is None:
@@ -186,17 +185,18 @@ class OrderGroup(TimeStampedModel, UUIDModel):
                 self.order_number = 1
             else:
                 self.order_number = max_order_number + 1
-        super().save(*args, **kwargs)
-    
-    @transaction.atomic
-    def update_total(self):
-        self.total = self.orders.aggregate(Sum('total'))['total__sum']
-        if self.total is None:
+        if self.id is None:
             self.total = 0
-        self.save()
+        elif self.total is None:
+            self.total = 0
+        elif self.orders.exists() and self.id is not None:
+            self.total = self.orders.aggregate(Sum('total'))['total__sum']
+        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f'Pedido {self.order_number}'
+    
     
 class TakeoutOrder(TimeStampedModel, UUIDModel):
     class Meta:
@@ -207,9 +207,12 @@ class TakeoutOrder(TimeStampedModel, UUIDModel):
     client_name = models.CharField(_('Client name'), max_length=255, blank=True, null=True)
     client_phone = PhoneNumberField(verbose_name=_('Phone'), blank=True, region='BR', null=True)
     cpf = BRCPFField(verbose_name=_('CPF'), blank=True, null=True)
-    status = models.CharField(_('Status'), max_length=255, choices=TAKEOUT_STATUS, default='OPEN')
+    status = models.CharField(_('Status'), max_length=255, choices=TAKEOUT_STATUS, default='PAID')
     order_group = models.OneToOneField(OrderGroup, verbose_name=_('Order Group'), on_delete=models.CASCADE, related_name='takeout_order')
     cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='takeout_orders')
+    payment_group = models.ForeignKey(PaymentGroup, verbose_name=_('Payment Group'), on_delete=models.SET_NULL, related_name='takeout_orders', blank=True, null=True)
+    
+
     def __str__(self):
         return f'{self.order_group.order_number}'
     
@@ -218,10 +221,6 @@ class TakeoutOrder(TimeStampedModel, UUIDModel):
         if self.order_group.bill is not None:
             raise ValidationError({
                 'detail': _('Um pedido para retirada não pode ter uma comanda.')
-            }, code='invalid')
-        if self.order_group.Table is not None:
-            raise ValidationError({
-                'detail': _('Um pedido para retirada não pode ter uma mesa.')
             }, code='invalid')
         if self.order_group.type == 'DELIVERY':
             raise ValidationError({
@@ -253,14 +252,19 @@ class Order(TimeStampedModel, UUIDModel):
 
     def __str__(self):
         return f'pedido {self.order_group.order_number} - {self.product_title}'
-    
+        
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.product:
             self.product_title = self.product.title
             self.unit_price = self.product.price
+        all_groups = self.complements.all()
+        if all_groups.exists():
+            self.total = (sum(group.total for group in all_groups) + self.unit_price) * self.quantity
+        elif self.unit_price:
+            self.total = self.unit_price * self.quantity
         super().save(*args, **kwargs)
-        self.order_group.update_total()
+        self.order_group.save()
 
     @transaction.atomic
     def delete(self, using = None, keep_parents = False):
@@ -285,10 +289,6 @@ class OrderComplement(TimeStampedModel, UUIDModel):
     def save(self, *args, **kwargs):
         if self.complement_group:
             self.complement_group_title = self.complement_group.title
-        super().save(*args, **kwargs)
-    
-    @transaction.atomic
-    def update_total(self):
         items = self.items.all()
         if not items:
             return
@@ -298,11 +298,10 @@ class OrderComplement(TimeStampedModel, UUIDModel):
             self.total = sum(item.total for item in items) / len(items)
         elif self.complement_group.business_rules == 'soma':
             self.total = sum(item.total for item in items)
-        self.save()
-        all_groups = self.order.complements.all()
-        if all_groups:
-            self.order.total = (sum(group.total for group in all_groups) + self.order.unit_price) * self.order.quantity 
-            self.order.save()
+        self.order.save()
+        super().save(*args, **kwargs)
+       
+        
 
     def __str__(self):
         return f'{self.complement_group_title} complemento do pedido {self.order.id}'
@@ -334,7 +333,7 @@ class OrderComplementItem(TimeStampedModel, UUIDModel):
                 raise ValidationError({
                     'detail': f'Você pode adicionar no máximo {self.order_complement.complement_group.max_value} items'}, code='400')
         super().save(*args, **kwargs)
-        self.order_complement.update_total()
+        self.order_complement.save()
 
     def __str__(self):
         return f'{self.complement_title} complemento do pedido {self.order_complement.order.id}'

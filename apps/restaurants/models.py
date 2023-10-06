@@ -151,7 +151,7 @@ class Employer(TimeStampedModel, UUIDModel):
     sidebar_permissions = models.ManyToManyField(Sidebar, blank=True)
 
     def __str__(self):
-        return self.user.first_name + ' | ' + self.restaurant.title
+        return self.user.first_name + ' | ' + self.user.email + self.restaurant.title + ' | ' + self.code
 
 class ProductCategory(TimeStampedModel, UUIDModel):
     class Meta:

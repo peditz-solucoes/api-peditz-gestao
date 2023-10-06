@@ -17,7 +17,8 @@ from .serializers import (
     DeleteOrderSerializer,
     PaymentsMethodSerializer,
     PaymentGroupSerializer,
-    CloseBillSerializer
+    CloseBillSerializer,
+    TakeOutOurderSerialier
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -66,6 +67,19 @@ class OrderGroupViewSet(viewsets.ModelViewSet):
             restaurant = user.employer.restaurant
             return OrderGroup.objects.filter(restaurant=restaurant)
         return OrderGroup.objects.none()
+class TakeOutOurderViewSet(viewsets.ModelViewSet):
+    serializer_class = TakeOutOurderSerialier
+    permission_classes = (IsAuthenticated,)
+    queryset = OrderGroup.objects.all().order_by('created')
+    http_method_names = ['post']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            restaurant = user.employer.restaurant
+            return OrderGroup.objects.filter(restaurant=restaurant)
+        except AttributeError:
+            return OrderGroup.objects.none()
     
 class OrderGroupListViewSet(viewsets.ModelViewSet):
     serializer_class = OrderGroupListSerializer

@@ -379,6 +379,35 @@ class CatalogInRestaurantSerializer(serializers.ModelSerializer):
             'photo',
             'delivery',
         ]
+
+
+class RestaurantInCatalogSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = Restaurant
+        fields = [
+            'id',
+            'title',
+            'slug',
+        ]
+class CatalogCrudSerializer(serializers.ModelSerializer):
+    restaurant = RestaurantInCatalogSerializer(read_only=True)
+    class Meta: 
+        model = Catalog
+        read_only_fields = ('created', 'modified', 'restaurant')
+        fields = '__all__'
+    
+    def save(self, **kwargs):
+        if self.instance is None:
+            try:
+                employer = Employer.objects.get(user=self.context['request'].user)
+                restaurant = employer.restaurant
+                self.validated_data['restaurant'] = restaurant
+            except Employer.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+            if Catalog.objects.filter(restaurant=restaurant, slug=self.validated_data.get('slug', None)).exists():
+                raise serializers.ValidationError({"detail":"Já existe um catálogo com este slug."})
+        return super().save(**kwargs)
+
 class RestaurantCatalogSerializer(serializers.ModelSerializer):
     catalogs = serializers.SerializerMethodField(read_only=True)
     class Meta:

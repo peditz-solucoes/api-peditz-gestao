@@ -1,5 +1,6 @@
 from decimal import Decimal
 import json
+import os
 import requests
 from rest_framework import serializers
 
@@ -172,4 +173,26 @@ class TestTaxSerializer(serializers.ModelSerializer):
         
 
 
+class NotesSerializer(serializers.ModelSerializer):
+    note = serializers.SerializerMethodField()
+    class Meta:
+        model = Tax
+        fields = '__all__'
+
+    def get_note(self, obj):
+        # notes = focus_api.get_notes(reference=obj.ref)
+        # return notes
+        STATUS = (
+            ('1', 'Aguardando envio'),
+            ('2', 'Enviado'),
+            ('3', 'Cancelado'),
+            ('4', 'Erro'),
+            ('5', 'Autorizado'),
+        )
+        status = STATUS[int(obj.status)-1][1]
+        url =  os.environ.get('FOCUS_URL', 'https://homologacao.focusnfe.com.br') + '/' + obj.caminho_danfe
+        return {
+            'status': status,
+            'url': url
+        }
     
