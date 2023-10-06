@@ -42,7 +42,8 @@ from apps.financial.api.viewsets import (
     DeleteOrderViewSet,
     PaymentMethodViewSet,
     PaymentGroupViewSet,
-    CloseBillViewSet
+    CloseBillViewSet,
+    TakeOutOurderViewSet
 )
 from apps.inventory.api.viewsets import (
     ItemStockViewSet,
@@ -95,6 +96,7 @@ router.register(r'item-stock-category', ItemStockCategoryViewSet, basename='item
 router.register(r'item-stock-transaction', ItemStockTransactionViewSet, basename='item-stock-transaction')
 router.register(r'item-ingredient', ItemIngredientViewSet, basename='item-ingredient')
 router.register(r'product-item-stock', ProductItemStockViewset, basename='product-item-stock-transaction')
+router.register(r'take-out', TakeOutOurderViewSet, basename='take-out')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

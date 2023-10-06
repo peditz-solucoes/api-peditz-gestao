@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 from uuid import UUID
 from rest_framework import serializers
-from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment
+from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment, TakeoutOrder
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
@@ -524,3 +524,202 @@ class CloseBillSerializer(serializers.ModelSerializer):
         bill.save()
         validated_data['message'] = 'Conta fechada com sucesso.'
         return validated_data
+    
+class TakeOutOurderSerialier(serializers.ModelSerializer):
+    status = StatusOrderSerializer(read_only=True)
+    restaurant = RestaurantCashierSerializer(read_only=True)
+    collaborator = EmployerOrderSerializer(read_only=True)
+    from_app = serializers.BooleanField(write_only=True, default=False)
+    order_items = serializers.JSONField()
+    payment_methods = serializers.JSONField(write_only=True)
+    client_name = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
+    client_phone = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
+    cpf = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
+
+    class Meta:
+        model = OrderGroup
+        fields = [
+            'id',
+            'status',
+            'created',
+            'collaborator_name',
+            'collaborator',
+            'total',
+            'order_number',
+            'restaurant',
+            'type',
+            'notes',
+            'order_items',
+            'from_app',
+            'payment_methods',
+            'client_name',
+            'client_phone',
+            'cpf',
+        ]
+        read_only_fields = ['collaborator_name', 'total', 'order_number', 'type', 'restaurant']
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context['request'].user
+        restaurant = None
+        employer = None
+        if user.employer:
+            employer = user.employer
+            restaurant = employer.restaurant
+        else:
+            raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        if restaurant is None:
+            raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        
+        validated_data['restaurant'] = restaurant
+        validated_data['collaborator'] = employer
+        
+        validated_data['status'] = OrderStatus.objects.filter(
+            restaurant=restaurant,
+        ).order_by('order').first()
+
+        orders = validated_data.get('order_items', None)
+        order_group = super().create({
+            'status':validated_data.get('status', None),
+            'collaborator':validated_data.get('collaborator', None),
+            'restaurant':validated_data.get('restaurant', None),
+            'type':'TAKEOUT',
+            'total':0,
+            'notes':validated_data.get('notes', None),
+        })
+
+        order_items_output = []
+        
+        if orders is None or len(orders) == 0:
+            raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
+        
+        for order in orders:
+            order_db = None
+            try: 
+                product = Product.objects.get(id=order['product_id'])
+                if product.printer is not None:
+                    printer = product.printer.name
+                else:
+                    printer = None
+                order_items_output.append({
+                    'product_id':  order['product_id'],
+                    'product_title':  product.title,
+                    'notes': order.get('notes', ''),
+                    'quantity': order['quantity'],
+                    'printer_name': printer,
+                    'items': [],
+                })
+                order_db = Order.objects.create(
+                    product=product,
+                    note=order.get('notes', ''),
+                    quantity=order['quantity'],
+                    order_group=order_group,
+                    product_title=product.title,
+                    total=float(product.price)* float(order['quantity']),
+                )
+                order_db.save()
+                if len(order['complements'])> 0:
+                    for complement in order['complements']:
+                        order_items_output[-1]['items'].append({
+                            'complement_id': complement['complement_id'],
+                            'complement_title': complement['complement_title'],
+                            'items': [],
+                        })
+                        if len(complement['items']) > 0:
+                            try:
+                                complement_group = ProductComplementCategory.objects.get(id=complement['complement_id'])
+                            except ProductComplementCategory.DoesNotExist:
+                                raise serializers.ValidationError({"detail":"Categoria de complemento não encontrada."})
+                            complement_db = OrderComplement.objects.create(
+                                order=order_db,
+                                complement_group=complement_group,
+                            )
+                            complement_db.save()
+                            if len(complement['items']):
+                                for item in complement['items']:
+                                    order_items_output[-1]['items'][-1]['items'].append({
+                                        'item_id': item['item_id'],
+                                        'item_title': item['item_title'],
+                                        'quantity': item['quantity'],
+                                    })
+                                    try:
+                                        complement_item = ProductComplementItem.objects.get(id=item['item_id'])
+                                    except ProductComplementItem.DoesNotExist:
+                                        raise serializers.ValidationError({"detail":"Complemento não encontrado."})
+                                    complement_item_db = OrderComplementItem.objects.create(
+                                        order_complement=complement_db,
+                                        complement=complement_item,
+                                        quantity=item['quantity'],
+                                    )
+                                    complement_item_db.save()
+                        
+
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({"detail":"Produto não encontrado."})
+        order_group.order_items = order_items_output
+        cashier = None
+        try:
+            cashier = Cashier.objects.get(open=True, restaurant=restaurant)
+        except Cashier.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
+
+        payment_group = PaymentGroup.objects.create(
+            tip= 0,
+            total= 0,
+            type= 'TAKEOUT',
+            cashier= cashier,
+        )
+
+        if len(validated_data.get('payment_methods', [])) > 0:
+            for payment_method in validated_data.get('payment_methods', []):
+                try:
+                    method = PaymentMethod.objects.get(id=payment_method['id'])
+                except PaymentMethod.DoesNotExist:
+                    raise serializers.ValidationError({"detail":"Forma de pagamento não encontrada."})
+                payment = Payment.objects.create(
+                    payment_group=payment_group,
+                    payment_method=method,
+                    value=payment_method['value'],
+                )
+                payment.save()
+        else:
+            raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
+
+        takeout = TakeoutOrder.objects.create(
+            client_name=validated_data.get('client_name', None),
+            client_phone=validated_data.get('client_phone', None),
+            cpf=validated_data.get('cpf', None),
+            order_group=order_group,
+            cashier=cashier,
+            payment_group=payment_group,
+        )
+
+        json_r = {
+            "id": order_group.id,
+            "status": {
+                "id": order_group.status.id,
+                "status": order_group.status.status
+            },
+            "created": str(order_group.created),
+            "collaborator_name": order_group.collaborator_name,
+            "collaborator": EmployerOrderSerializer(order_group.collaborator).data,
+            "total": str(order_group.total),
+            "order_number": order_group.order_number,
+            "restaurant": {
+                "id": validated_data.get('restaurant', None).id or None,
+                "title": validated_data.get('restaurant', None).title or None,
+            },
+            "type": order_group.type,
+            "order_items": order_group.order_items,
+            "takeout_order": takeout.id,
+        }
+
+
+        if validated_data.get('from_app', False):
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "pedidos_%s" % restaurant.id,
+                {"type": "order",
+                    "message": json.dumps(json_r, cls=UUIDEncoder)
+                }
+            )
+        return order_group
