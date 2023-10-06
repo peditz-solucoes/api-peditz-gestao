@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 
-from .serializers import ItemCategorySerializer, ItemIngredientSerializer, ItemSerializer, ItemStockTransactionSerializer
-from ..models import Item, ItemCategory, ItemItem, ItemTransaction
+from .serializers import ItemCategorySerializer, ItemIngredientSerializer, ItemSerializer, ItemStockTransactionSerializer, ProductItemStockSerializer
+from ..models import Item, ItemCategory, ItemItem, ItemTransaction, ProductItem
 from django_filters.rest_framework import DjangoFilterBackend
 
 class ItemStockViewSet(viewsets.ModelViewSet):
@@ -51,3 +51,16 @@ class ItemIngredientViewSet(viewsets.ModelViewSet):
             return ItemItem.objects.filter(item__category__restaurant=user.employer.restaurant, ingredient__category__restaurant=user.employer.restaurant).order_by('created')
         except AttributeError:
             return ItemItem.objects.none()
+        
+class ProductItemStockViewset(viewsets.ModelViewSet):
+    serializer_class = ProductItemStockSerializer
+    queryset = ProductItem.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['item', 'product']
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            return ProductItem.objects.filter(item__category__restaurant=user.employer.restaurant, product__product_category__restaurant=user.employer.restaurant).order_by('created')
+        except AttributeError:
+            return ProductItem.objects.none()

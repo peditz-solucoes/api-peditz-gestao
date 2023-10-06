@@ -48,7 +48,8 @@ from apps.inventory.api.viewsets import (
     ItemStockViewSet,
     ItemStockCategoryViewSet,
     ItemStockTransactionViewSet,
-    ItemIngredientViewSet
+    ItemIngredientViewSet,
+    ProductItemStockViewset
 )
 
 import os
@@ -93,6 +94,7 @@ router.register(r'item-stock', ItemStockViewSet, basename='item-stock')
 router.register(r'item-stock-category', ItemStockCategoryViewSet, basename='item-stock-category')
 router.register(r'item-stock-transaction', ItemStockTransactionViewSet, basename='item-stock-transaction')
 router.register(r'item-ingredient', ItemIngredientViewSet, basename='item-ingredient')
+router.register(r'product-item-stock', ProductItemStockViewset, basename='product-item-stock-transaction')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

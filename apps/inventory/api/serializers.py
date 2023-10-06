@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.user.models import User
 
-from ..models import Item, ItemCategory, ItemTransaction, ItemItem
+from ..models import Item, ItemCategory, ItemTransaction, ItemItem, ProductItem
 from django.db import transaction
 
 class ItemCategorySerializer(serializers.ModelSerializer):
@@ -129,4 +129,34 @@ class ItemIngredientSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Este ingrediente já existe neste item"})
             if ItemItem.objects.filter(item=validated_data.get('ingredient', None), ingredient=validated_data.get('item', None)).exists():
                 raise serializers.ValidationError({"detail":"Você não pode adicionar este item como ingrediente, pois ele já é um ingrediente do item selecionado."})
+        return super().create(validated_data)
+    
+class ProductItemStockSerializer(serializers.ModelSerializer):
+    item_detail = serializers.SerializerMethodField(read_only=True)
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), write_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), write_only=True)
+    product_detail = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = ProductItem
+        fields = [
+            'id',
+            'item',
+            'quantity',
+            'item_detail',
+            'product',
+            'product_detail',
+        ]
+
+    def get_item_detail(self, obj):
+        return ItemIngredientListSerializer(obj.item).data
+    
+    def get_product_detail(self, obj):
+        return ItemIngredientListSerializer(obj.product).data
+    
+    def create(self, validated_data):
+        if validated_data.get('item', None) is not None and validated_data.get('product', None) is not None:
+            if validated_data.get('item', None) == validated_data.get('product', None):
+                raise serializers.ValidationError({"detail":"Um item não pode ser ingrediente dele mesmo."})
+            if ProductItem.objects.filter(item=validated_data.get('item', None), product=validated_data.get('product', None)).exists():
+                raise serializers.ValidationError({"detail":"Este ingrediente já existe neste produto"})
         return super().create(validated_data)
