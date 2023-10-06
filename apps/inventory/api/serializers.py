@@ -1,15 +1,7 @@
-from decimal import Decimal
-import json
-import os
-import requests
 from rest_framework import serializers
-
-from apps.restaurants.models import Employer, Product
 from apps.user.models import User
 
-from ..models import Item, ItemCategory, ItemTransaction
-import pytz
-from datetime import datetime
+from ..models import Item, ItemCategory, ItemTransaction, ItemItem
 from django.db import transaction
 
 class ItemCategorySerializer(serializers.ModelSerializer):
@@ -17,9 +9,20 @@ class ItemCategorySerializer(serializers.ModelSerializer):
         model = ItemCategory
         fields = ['title', 'id']
 
+
+class IngredientInItemSerializer(serializers.ModelSerializer):
+    item = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = ItemItem
+        fields = ['id', 'item', 'quantity']
+
+    def get_item(self, obj):
+        return obj.ingredient.title
+
 class ItemSerializer(serializers.ModelSerializer):
     category_detail = serializers.SerializerMethodField()
     category = serializers.CharField(write_only=True, required=False)
+    ingredients = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Item
         fields = [
@@ -32,7 +35,11 @@ class ItemSerializer(serializers.ModelSerializer):
             'id',
             'category_detail',
             'category',
+            'ingredients',
         ]
+
+    def get_ingredients(self, obj):
+        return IngredientInItemSerializer(obj.items, many=True).data
 
     def get_category_detail(self, obj):
         return ItemCategorySerializer(obj.category).data
@@ -85,3 +92,41 @@ class ItemStockTransactionSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
         except Exception as e:
             raise serializers.ValidationError({"detail":str(e)})
+        
+    
+class ItemIngredientListSerializer(serializers.ModelSerializer):
+    class  Meta:
+        model = Item
+        fields = ['id', 'title']
+
+class ItemIngredientSerializer(serializers.ModelSerializer):
+    item_detail = serializers.SerializerMethodField(read_only=True)
+    ingredient_detail = serializers.SerializerMethodField(read_only=True)
+    item = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), write_only=True)
+    ingredient = serializers.PrimaryKeyRelatedField(queryset=Item.objects.all(), write_only=True)
+    class Meta:
+        model = ItemItem
+        fields = [
+            'id',
+            'item',
+            'ingredient',
+            'quantity',
+            'item_detail',
+            'ingredient_detail',
+        ]
+
+    def get_item_detail(self, obj):
+        return ItemIngredientListSerializer(obj.item).data
+    
+    def get_ingredient_detail(self, obj):
+        return ItemIngredientListSerializer(obj.ingredient).data
+    
+    def create(self, validated_data):
+        if validated_data.get('item', None) is not None and validated_data.get('ingredient', None) is not None:
+            if validated_data.get('item', None) == validated_data.get('ingredient', None):
+                raise serializers.ValidationError({"detail":"Um item não pode ser ingrediente dele mesmo."})
+            if ItemItem.objects.filter(item=validated_data.get('item', None), ingredient=validated_data.get('ingredient', None)).exists():
+                raise serializers.ValidationError({"detail":"Este ingrediente já existe neste item"})
+            if ItemItem.objects.filter(item=validated_data.get('ingredient', None), ingredient=validated_data.get('item', None)).exists():
+                raise serializers.ValidationError({"detail":"Você não pode adicionar este item como ingrediente, pois ele já é um ingrediente do item selecionado."})
+        return super().create(validated_data)

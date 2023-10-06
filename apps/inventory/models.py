@@ -56,11 +56,11 @@ class ItemItem(TimeStampedModel, UUIDModel):
         verbose_name = _('Item item')
         verbose_name_plural = _('Item items')
     item = models.ForeignKey(Item, verbose_name=_('Item'), on_delete=models.CASCADE, related_name='items')
-    item_related = models.ForeignKey(Item, verbose_name=_('Item related'), on_delete=models.CASCADE, related_name='items_related')
+    ingredient = models.ForeignKey(Item, verbose_name=_('Item related'), on_delete=models.CASCADE, related_name='items_related')
     quantity = models.DecimalField(_('Quantity'), max_digits=100, decimal_places=3)
 
     def __str__(self):
-        return f'{self.item.title} - {self.item_related.title}'
+        return f'{self.item.title} - {self.ingredient.title}'
     
 
 class ProductItem(TimeStampedModel, UUIDModel):
@@ -102,18 +102,18 @@ class ItemTransaction(TimeStampedModel, UUIDModel):
                 raise Exception('Não há estoque suficiente para esta operação')
         elif self.quantity > 0:
             for item in self.item.items.all():
-                if item.item_related.stock >= self.quantity * item.quantity:
+                if item.ingredient.stock >= self.quantity * item.quantity:
                     ItemTransaction.objects.create(
-                        item=item.item_related,
+                        item=item.ingredient,
                         quantity=-1 * (item.quantity * self.quantity),
                         unit_price=self.unit_price,
                         total=self.total,
                         user=self.user,
                         notes='Baixa de estoque para o item ' + self.item.title,
                     )
-                    item.item_related.save()
+                    item.ingredient.save()
                 else:
-                    message = f'Não foi possível dar baixa no item {item.item_related.title} pois não há estoque suficiente'
+                    message = f'Não foi possível dar baixa no item {item.ingredient.title} pois não há estoque suficiente'
                     raise Exception(message)
         self.item.stock += self.quantity
         self.item.save()
