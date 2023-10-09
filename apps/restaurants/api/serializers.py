@@ -195,6 +195,27 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
 
+    @transaction.atomic
+    def create(self, validated_data):
+        product = super().create(validated_data)
+        price = ProductPrice.objects.get_or_create(
+                    price = product.price,
+                    product = product,
+                    tag='cardapio_digital'
+                )[0]
+        price.save()
+        return product
+    
+    def update(self, instance, validated_data):
+        product = super().update(instance, validated_data)
+        price = ProductPrice.objects.get_or_create(
+                    product = product,
+                    tag='cardapio_digital'
+        )[0]
+        price.price = product.price
+        price.save()
+        return product
+
     def get_printer_detail(self, obj):
         printer = obj.printer
         serializer = PrinterDetailSerializer(printer)
@@ -341,10 +362,18 @@ class ProductPriceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductPrice
         fields = '__all__'
+
+
 class ProductPriceSerializer(serializers.ModelSerializer):
+    product_detail = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = ProductPrice
         fields = '__all__'
+
+    def get_product_detail(self, obj):
+        product = obj.product
+        serializer = ProductCatalogSerializer(product)
+        return serializer.data
 
 class CatalogSerializer(serializers.ModelSerializer):
     products_prices = serializers.SerializerMethodField(read_only=True)
@@ -435,3 +464,4 @@ class RestaurantCatalogSerializer(serializers.ModelSerializer):
         catalogs = obj.catalogs.filter(active=True).order_by('order', 'title')
         serializer = CatalogInRestaurantSerializer(catalogs, many=True)
         return serializer.data
+
