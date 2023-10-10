@@ -64,6 +64,26 @@ class ItemSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
     
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        restaurant = None
+        try:  
+            restaurant = user.employer.restaurant
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+            except AttributeError:
+                raise serializers.ValidationError({"detail":"Este usuário não possui um restaurante."})
+
+        try:
+            category_data = ItemCategory.objects.get_or_create(title=validated_data['category'], restaurant=restaurant)
+            validated_data['category'] = category_data[0]
+        except ItemCategory.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Error ao criar categoria."})
+
+        return super().update(instance, validated_data)
+    
 class UserSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     class Meta:
