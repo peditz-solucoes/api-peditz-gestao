@@ -535,7 +535,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
     client_name = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     client_phone = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     cpf = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
-
+    takeout_order = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = OrderGroup
         fields = [
@@ -555,8 +555,16 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
             'client_name',
             'client_phone',
             'cpf',
+            'takeout_order'
         ]
         read_only_fields = ['collaborator_name', 'total', 'order_number', 'type', 'restaurant']
+    
+    def get_takeout_order(self, obj):
+        try:
+            takeout = TakeoutOrder.objects.get(order_group=obj)
+            return takeout.sequence
+        except TakeoutOrder.DoesNotExist:
+            return None
     @transaction.atomic
     def create(self, validated_data):
         user = self.context['request'].user
@@ -684,7 +692,14 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                 payment.save()
         else:
             raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
-
+        last_sequence = TakeoutOrder.objects.filter(
+            order_group__restaurant=restaurant,
+            created__date=datetime.now().date(),
+        ).order_by('-sequence').first()
+        if last_sequence is None:
+            sequence = 1
+        else:
+            sequence = last_sequence.sequence + 1
         takeout = TakeoutOrder.objects.create(
             client_name=validated_data.get('client_name', None),
             client_phone=validated_data.get('client_phone', None),
@@ -692,6 +707,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
             order_group=order_group,
             cashier=cashier,
             payment_group=payment_group,
+            sequence=sequence,
         )
 
         json_r = {
