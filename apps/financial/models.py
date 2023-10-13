@@ -211,7 +211,7 @@ class TakeoutOrder(TimeStampedModel, UUIDModel):
     order_group = models.OneToOneField(OrderGroup, verbose_name=_('Order Group'), on_delete=models.CASCADE, related_name='takeout_order')
     cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='takeout_orders')
     payment_group = models.ForeignKey(PaymentGroup, verbose_name=_('Payment Group'), on_delete=models.SET_NULL, related_name='takeout_orders', blank=True, null=True)
-    
+    sequence = models.PositiveIntegerField(_('Sequence'), default=0)
 
     def __str__(self):
         return f'{self.order_group.order_number}'
