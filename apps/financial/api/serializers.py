@@ -603,6 +603,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                 order_items_output.append({
                     'product_id':  order['product_id'],
                     'product_title':  product.title,
+                    'product_price': product.price,
                     'notes': order.get('notes', ''),
                     'quantity': order['quantity'],
                     'printer_name': printer,
