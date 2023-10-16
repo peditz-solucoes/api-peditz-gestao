@@ -74,7 +74,14 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return ProductCategory.objects.filter(restaurant__owner=self.request.user) 
+        user = self.request.user
+        try:
+            return ProductCategory.objects.filter(restaurant=user.employer.restaurant)
+        except AttributeError:
+            try:
+                return ProductCategory.objects.filter(restaurant=user.restaurants)
+            except AttributeError:
+                return ProductCategory.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(restaurant=self.request.user.restaurants)
