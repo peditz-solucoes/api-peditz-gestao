@@ -54,6 +54,7 @@ from apps.inventory.api.viewsets import (
 )
 
 import os
+from apps.ifood.api.viewsets import IfoodAuthCodeViewSet, IfoodAuthTokenViewSet, IfoodMerchantsViewSet
 
 from apps.tax_module.api.viewsets import TaxViewSet, TestTaxViewSet, NotesViewSet
 
@@ -97,6 +98,10 @@ router.register(r'item-stock-transaction', ItemStockTransactionViewSet, basename
 router.register(r'item-ingredient', ItemIngredientViewSet, basename='item-ingredient')
 router.register(r'product-item-stock', ProductItemStockViewset, basename='product-item-stock-transaction')
 router.register(r'take-out', TakeOutOurderViewSet, basename='take-out')
+router.register(r'ifood-auth-code', IfoodAuthCodeViewSet, basename='ifood-auth-code')
+router.register(r'ifood-auth-token', IfoodAuthTokenViewSet, basename='ifood-auth-token')
+router.register(r'ifood-merchants', IfoodMerchantsViewSet, basename='ifood-merchants')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
