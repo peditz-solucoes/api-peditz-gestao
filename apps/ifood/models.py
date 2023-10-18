@@ -7,11 +7,11 @@ class IfoodUserCredentials(models.Model):
         verbose_name = 'Ifood user credentials'
         verbose_name_plural = 'Ifood user credentials'
 
-    token = models.CharField(max_length=255)
+    token = models.TextField()
     token_type = models.CharField(max_length=255)
     expires_in = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255)
+    refresh_token = models.TextField()
     restaurant = models.OneToOneField(Restaurant, on_delete=models.CASCADE, related_name='ifood_user_credentials')
-    
+
     def __str__(self):
         return self.restaurant.title
