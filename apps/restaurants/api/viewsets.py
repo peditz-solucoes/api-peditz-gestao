@@ -14,12 +14,17 @@ from apps.restaurants.models import (
     Table,
     Catalog
 )
+from apps.financial.models import (
+    Order,
+)
+from peditz.stats import StatsApi
 from .serializers import (
     CatalogCrudSerializer,
     CatalogSerializer,
     PrinterSerializer,
     ProductCatalogSerializer,
     ProductPriceSerializer,
+    ProductsStatsSerializer,
     RestaurantCatalogSerializer,
     RestaurantSerializer, 
     EmployerSerializer, 
@@ -35,8 +40,9 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as filters
 
-
+stats_api = StatsApi()
 
 class RestaurantViewSet(viewsets.ModelViewSet):
     queryset = Restaurant.objects.all()
@@ -231,5 +237,38 @@ class CatalogCrudViewSet(viewsets.ModelViewSet):
                 return  Catalog.objects.filter(restaurant=user.restaurants).order_by('order', 'created')
             except AttributeError:
                 return Product.objects.none()
+
+
+class ProductsStatsFilter(filters.FilterSet):
+    initial_date = filters.DateFilter(field_name='created', lookup_expr='gte')
+    final_date = filters.DateFilter(field_name='created', lookup_expr='lte')
+
+    class Meta:
+        model = Order
+        fields = ['initial_date', 'final_date']
+            
+
+class ProductsStatsViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductsStatsSerializer
+    http_method_names = ['get']
+    permmision_classes = (IsAuthenticated,)
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        try:
+            user = self.request.user
+            restaurant = user.employer.restaurant
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+            except AttributeError:
+                raise Response({"detail":"Este usuário não possui um restaurante."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        response = stats_api.get_products_stats(
+            restaurant_id=restaurant.id,
+            initial_date=self.request.GET.get('initialDate'),
+            final_date=self.request.GET.get('finalDate')
+        )
+        return response
 
 
