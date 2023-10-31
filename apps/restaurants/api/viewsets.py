@@ -267,7 +267,8 @@ class ProductsStatsViewSet(viewsets.ModelViewSet):
         response = stats_api.get_products_stats(
             restaurant_id=restaurant.id,
             initial_date=self.request.GET.get('initialDate'),
-            final_date=self.request.GET.get('finalDate')
+            final_date=self.request.GET.get('finalDate'),
+            category_id=self.request.GET.get('categoryId'),
         )
         return response
 
