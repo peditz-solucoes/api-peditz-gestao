@@ -15,15 +15,8 @@ class StatsApi:
         if not initial_date:
             initial_date = datetime.now() - timedelta(days=7)
             initial_date = initial_date.strftime("%Y-%m-%d %H:%M:%S")
-            # 2023-10-30T23:59:59-03:00
-        else:
-            initial_date = datetime.strptime(initial_date)
-            initial_date = initial_date.strftime("%Y-%m-%d %H:%M:%S")
         if not final_date:
             final_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            final_date = datetime.strptime(final_date)
-            final_date = final_date.strftime("%Y-%m-%d %H:%M:%S")
         url = f'{self.base_url}/products/{restaurant_id}?initial_date={initial_date}&final_date={final_date}&category_id={category_id}'
         headers = {
             'Content-Type': 'application/json',
