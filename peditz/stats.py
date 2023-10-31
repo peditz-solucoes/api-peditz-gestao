@@ -11,7 +11,7 @@ class StatsApi:
         }
         self.base_url = os.environ.get('STATS_API_URL', 'http://localhost:3333')
     
-    def get_products_stats(self, restaurant_id, initial_date, final_date, category_id: Optional[str] = None):
+    def get_products_stats(self, restaurant_id, initial_date, final_date, category_id: Optional[str] = ''):
         if not initial_date:
             initial_date = datetime.now() - timedelta(days=7)
             initial_date = initial_date.strftime("%Y-%m-%d %H:%M:%S")
