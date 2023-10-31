@@ -268,7 +268,7 @@ class ProductsStatsViewSet(viewsets.ModelViewSet):
             restaurant_id=restaurant.id,
             initial_date=self.request.GET.get('initialDate'),
             final_date=self.request.GET.get('finalDate'),
-            category_id=self.request.GET.get('categoryId'),
+            category_id=self.request.GET.get('categoryId') or '',
         )
         return response
 
