@@ -465,3 +465,22 @@ class RestaurantCatalogSerializer(serializers.ModelSerializer):
         serializer = CatalogInRestaurantSerializer(catalogs, many=True)
         return serializer.data
 
+
+
+class ProductsStatsSerializer(serializers.Serializer):
+    product_id = serializers.CharField(read_only=True)
+    quantity_total = serializers.CharField(read_only=True)
+    value_total = serializers.CharField(read_only=True)
+    unite_price = serializers.CharField(read_only=True)
+    product_title = serializers.CharField(read_only=True)
+
+    class Meta:
+        fields = [
+            'product_id',
+            'quantity_total',
+            'value_total',
+            'unite_price',
+            'product_title',
+        ]
+
+    

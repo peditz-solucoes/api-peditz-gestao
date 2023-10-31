@@ -31,7 +31,8 @@ from apps.restaurants.api.viewsets import (
     UserPermissionViewSet,
     SidebartViewSet,
     ProductPriceViewSet,
-    CatalogCrudViewSet
+    CatalogCrudViewSet,
+    ProductsStatsViewSet
 )
 from apps.financial.api.viewsets import (
     CashierViewSet,
@@ -101,6 +102,7 @@ router.register(r'take-out', TakeOutOurderViewSet, basename='take-out')
 router.register(r'ifood-auth-code', IfoodAuthCodeViewSet, basename='ifood-auth-code')
 router.register(r'ifood-auth-token', IfoodAuthTokenViewSet, basename='ifood-auth-token')
 router.register(r'ifood-merchants', IfoodMerchantsViewSet, basename='ifood-merchants')
+router.register(r'product-stats', ProductsStatsViewSet, basename='product-stats')
 
 
 urlpatterns = [
