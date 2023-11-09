@@ -257,7 +257,6 @@ class Order(TimeStampedModel, UUIDModel):
     def save(self, *args, **kwargs):
         if self.product:
             self.product_title = self.product.title
-            self.unit_price = self.product.price
         all_groups = self.complements.all()
         if all_groups.exists():
             self.total = float((sum(group.total for group in all_groups) + self.unit_price)) * float(self.quantity)
@@ -325,7 +324,6 @@ class OrderComplementItem(TimeStampedModel, UUIDModel):
     def save(self, *args, **kwargs):
         if self.complement:
             self.complement_title = self.complement.title
-            self.unit_price = self.complement.price
             self.total = self.unit_price * self.quantity
 
         if self.order_complement.complement_group:
