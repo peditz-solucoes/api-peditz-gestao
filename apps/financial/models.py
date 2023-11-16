@@ -141,6 +141,7 @@ class OrderStatus(TimeStampedModel, UUIDModel):
         ordering = ['created']
 
     status = models.CharField(_('Status'), max_length=255)
+    color = models.CharField(_('Color'), max_length=255, blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='order_status')
     active = models.BooleanField(_('Active'), default=True)
     order = models.PositiveIntegerField(_('Order'), default=0)
@@ -163,6 +164,7 @@ class OrderGroup(TimeStampedModel, UUIDModel):
     collaborator_name = models.CharField(_('Colaborator name'), max_length=255, blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='order_groups')
     notes = models.TextField(_('Notes'), blank=True, null=True)
+    cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.SET_NULL, related_name='order_groups', blank=True, null=True)
     @transaction.atomic
     def save(self, *args, **kwargs):
         if self.type == 'BILL' and self.bill is None:
@@ -363,10 +365,18 @@ class Payment(TimeStampedModel, UUIDModel):
         verbose_name_plural = _('Payments')
         ordering = ['-created']
 
+    TRANSACTION_TYPES = (
+        ('PAYMENT', 'ENTRADA'),
+        ('REFUND', 'REENBOLSO'),
+        ('CHARGEBACK', 'TROCO'),
+        ('WITHDRAW', 'SANAGRIA'),
+    )
+
     payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.PROTECT, related_name='payments')
     payment_method_title = models.CharField(_('Payment Method title'), max_length=255)
     value = models.DecimalField(_('Value'), max_digits=10, decimal_places=2)
     note = models.TextField(_('Note'), blank=True, null=True)
+    type = models.CharField(_('Type'), max_length=255, choices=TRANSACTION_TYPES, default='PAYMENT')
     payment_group = models.ForeignKey(PaymentGroup, verbose_name=_('Payment Group'), on_delete=models.CASCADE, related_name='payments')
 
     @transaction.atomic

@@ -197,6 +197,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'operator_code',
             'order_items',
             'from_app',
+            'cashier',
         ]
         read_only_fields = ['collaborator_name', 'total', 'order_number', 'type']
     @transaction.atomic
@@ -234,6 +235,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'collaborator':validated_data.get('collaborator', None),
             'restaurant':validated_data.get('restaurant', None),
             'type':'BILL',
+            'cashier': restaurant.cashiers.filter(open=True).first(),
             'total':0,
         })
         order_items_output = []
@@ -377,6 +379,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderGroupListSerializer(serializers.ModelSerializer):
     orders = OrderSerializer(many=True, read_only=True)
+    status = StatusOrderSerializer(read_only=True)
+    bill = BillItemSerializer(read_only=True)
     class Meta:
         model = OrderGroup
         fields = [
@@ -387,6 +391,9 @@ class OrderGroupListSerializer(serializers.ModelSerializer):
             'order_number',
             'type',
             'orders',
+            'status',
+            'modified',
+            'bill',
         ]
 
 class DeleteOrderSerializer(serializers.ModelSerializer):
@@ -492,7 +499,8 @@ class PaymentMethodListSerializer(serializers.ModelSerializer):
             'value',
             'note',
             'created',
-            'id'
+            'id',
+            'type',
 ]
 
 class ListPaymentsGroupsSerializer(serializers.ModelSerializer):
@@ -596,6 +604,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
             'type':'TAKEOUT',
             'total':0,
             'notes':validated_data.get('notes', None),
+            'cashier': restaurant.cashiers.filter(open=True).first(),
         })
 
         order_items_output = []
@@ -695,6 +704,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                     payment_group=payment_group,
                     payment_method=method,
                     value=payment_method['value'],
+                    type=payment_method.get('type', 'PAYMENT')
                 )
                 payment.save()
         else:
@@ -954,3 +964,9 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
 #                 }
 #             )
 #         return order_group
+
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderStatus
+        fields = '__all__'

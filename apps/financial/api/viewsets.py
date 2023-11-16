@@ -6,7 +6,8 @@ from apps.financial.models import (
     Bill,
     OrderGroup,
     PaymentMethod,
-    PaymentGroup
+    PaymentGroup,
+    OrderStatus
 )
 from .serializers import (
     CashierSerializer,
@@ -18,7 +19,8 @@ from .serializers import (
     PaymentsMethodSerializer,
     PaymentGroupSerializer,
     CloseBillSerializer,
-    TakeOutOurderSerialier
+    TakeOutOurderSerialier,
+    OrderStatusSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -86,7 +88,7 @@ class OrderGroupListViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['bill', 'collaborator', 'status', 'bill__cashier']
+    filterset_fields = ['type', 'bill', 'collaborator', 'status', 'bill__cashier', 'takeout_order__cashier', 'cashier']
 
     def get_queryset(self):
         user = self.request.user
@@ -176,3 +178,15 @@ class CloseBillViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Bill.objects.none()
+    
+
+class OrderStatusViewSet(viewsets.ModelViewSet):
+    serializer_class = OrderStatusSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.employer is not None:
+            restaurant = user.employer.restaurant
+            return OrderStatus.objects.filter(restaurant=restaurant)
+        return OrderGroup.objects.none()
