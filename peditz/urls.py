@@ -44,7 +44,8 @@ from apps.financial.api.viewsets import (
     PaymentMethodViewSet,
     PaymentGroupViewSet,
     CloseBillViewSet,
-    TakeOutOurderViewSet
+    TakeOutOurderViewSet,
+    OrderStatusViewSet
 )
 from apps.inventory.api.viewsets import (
     ItemStockViewSet,
@@ -103,7 +104,7 @@ router.register(r'ifood-auth-code', IfoodAuthCodeViewSet, basename='ifood-auth-c
 router.register(r'ifood-auth-token', IfoodAuthTokenViewSet, basename='ifood-auth-token')
 router.register(r'ifood-merchants', IfoodMerchantsViewSet, basename='ifood-merchants')
 router.register(r'product-stats', ProductsStatsViewSet, basename='product-stats')
-
+router.register(r'order-status', OrderStatusViewSet, basename='order-status')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -17,7 +17,6 @@ class StatsApi:
             initial_date = initial_date.strftime("%Y-%m-%d %H:%M:%S")
         if not final_date:
             final_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         url = f'{self.base_url}/products/{restaurant_id}?initial_date={initial_date}&final_date={final_date}&category_id={category_id}'
         headers = {
             'Content-Type': 'application/json',

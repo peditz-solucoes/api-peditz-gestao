@@ -14,6 +14,8 @@ from apps.restaurants.models import (
     Table,
     Catalog
 )
+from rest_framework.exceptions import PermissionDenied
+
 from apps.financial.models import (
     Order,
 )
@@ -262,7 +264,7 @@ class ProductsStatsViewSet(viewsets.ModelViewSet):
             try:
                 restaurant = user.restaurants
             except AttributeError:
-                raise Response({"detail":"Este usuário não possui um restaurante."}, status=status.HTTP_400_BAD_REQUEST)
+                raise PermissionDenied(detail="Você não tem permissão para acessar essas informações")
         
         response = stats_api.get_products_stats(
             restaurant_id=restaurant.id,

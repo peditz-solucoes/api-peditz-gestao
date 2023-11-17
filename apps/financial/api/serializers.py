@@ -4,11 +4,12 @@ import json
 from uuid import UUID
 from rest_framework import serializers
 from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment, TakeoutOrder
-from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem
+from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem, ProductPrice, ComplementPrice
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
+from apps.delivery.models import Client, DeliveryRestaurantConfig, DeliveryOrder, ClientAdress
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -196,6 +197,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'operator_code',
             'order_items',
             'from_app',
+            'cashier',
         ]
         read_only_fields = ['collaborator_name', 'total', 'order_number', 'type']
     @transaction.atomic
@@ -233,6 +235,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
             'collaborator':validated_data.get('collaborator', None),
             'restaurant':validated_data.get('restaurant', None),
             'type':'BILL',
+            'cashier': restaurant.cashiers.filter(open=True).first(),
             'total':0,
         })
         order_items_output = []
@@ -258,6 +261,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                     product=product,
                     note=order.get('notes', ''),
                     quantity=order['quantity'],
+                    unit_price=product.price,
                     order_group=order_group,
                     product_title=product.title,
                     total=float(product.price)* float(order['quantity']),
@@ -294,6 +298,7 @@ class OrderGroupSerialier(serializers.ModelSerializer):
                                     complement_item_db = OrderComplementItem.objects.create(
                                         order_complement=complement_db,
                                         complement=complement_item,
+                                        unit_price=complement_item.price,
                                         quantity=item['quantity'],
                                     )
                                     complement_item_db.save()
@@ -374,6 +379,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderGroupListSerializer(serializers.ModelSerializer):
     orders = OrderSerializer(many=True, read_only=True)
+    status = StatusOrderSerializer(read_only=True)
+    bill = BillItemSerializer(read_only=True)
     class Meta:
         model = OrderGroup
         fields = [
@@ -384,6 +391,9 @@ class OrderGroupListSerializer(serializers.ModelSerializer):
             'order_number',
             'type',
             'orders',
+            'status',
+            'modified',
+            'bill',
         ]
 
 class DeleteOrderSerializer(serializers.ModelSerializer):
@@ -489,7 +499,8 @@ class PaymentMethodListSerializer(serializers.ModelSerializer):
             'value',
             'note',
             'created',
-            'id'
+            'id',
+            'type',
 ]
 
 class ListPaymentsGroupsSerializer(serializers.ModelSerializer):
@@ -593,6 +604,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
             'type':'TAKEOUT',
             'total':0,
             'notes':validated_data.get('notes', None),
+            'cashier': restaurant.cashiers.filter(open=True).first(),
         })
 
         order_items_output = []
@@ -608,6 +620,16 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                     printer = product.printer.name
                 else:
                     printer = None
+                order_db = Order.objects.create(
+                    product=product,
+                    note=order.get('notes', ''),
+                    quantity=order['quantity'],
+                    unit_price=product.price,
+                    order_group=order_group,
+                    product_title=product.title,
+                    total=float(product.price)* float(order['quantity']),
+                )
+                order_db.save()
                 order_items_output.append({
                     'product_id':  order['product_id'],
                     'product_title':  product.title,
@@ -616,16 +638,9 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                     'quantity': order['quantity'],
                     'printer_name': printer,
                     'items': [],
+                    'id': order_db.id,
+
                 })
-                order_db = Order.objects.create(
-                    product=product,
-                    note=order.get('notes', ''),
-                    quantity=order['quantity'],
-                    order_group=order_group,
-                    product_title=product.title,
-                    total=float(product.price)* float(order['quantity']),
-                )
-                order_db.save()
                 if len(order['complements'])> 0:
                     for complement in order['complements']:
                         order_items_output[-1]['items'].append({
@@ -657,6 +672,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                                     complement_item_db = OrderComplementItem.objects.create(
                                         order_complement=complement_db,
                                         complement=complement_item,
+                                        unit_price=complement_item.price,
                                         quantity=item['quantity'],
                                     )
                                     complement_item_db.save()
@@ -688,6 +704,7 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                     payment_group=payment_group,
                     payment_method=method,
                     value=payment_method['value'],
+                    type=payment_method.get('type', 'PAYMENT')
                 )
                 payment.save()
         else:
@@ -740,3 +757,216 @@ class TakeOutOurderSerialier(serializers.ModelSerializer):
                 }
             )
         return order_group
+    
+# class DeliveryOrderSerialier(serializers.ModelSerializer):
+#     status = StatusOrderSerializer(read_only=True)
+#     restaurant = RestaurantCashierSerializer(read_only=True)
+#     restaurant_id = serializers.PrimaryKeyRelatedField(queryset=Restaurant.objects.all(), write_only=True)
+#     from_app = serializers.BooleanField(write_only=True, default=False)
+#     order_items = serializers.JSONField()
+#     payment_methods = serializers.JSONField(write_only=True)
+#     client = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all(), write_only=True)
+#     adress = serializers.PrimaryKeyRelatedField(queryset=ClientAdress.objects.all(), write_only=True)
+
+#     class Meta:
+#         model = OrderGroup
+#         fields = [
+#             'id',
+#             'status',
+#             'created',
+#             'total',
+#             'order_number',
+#             'restaurant',
+#             'type',
+#             'notes',
+#             'order_items',
+#             'from_app',
+#             'payment_methods',
+#             'client'
+#         ]
+#         read_only_fields = ['total', 'order_number', 'type', 'restaurant']
+    
+#     @transaction.atomic
+#     def create(self, validated_data):
+#         restaurant = validated_data.get('restaurant_id', None)
+#         validated_data['restaurant'] = restaurant
+
+#         try:
+#             configs = DeliveryRestaurantConfig.objects.get(restaurant=restaurant)
+#         except DeliveryRestaurantConfig.DoesNotExist:
+#             raise serializers.ValidationError({"detail":"Este restaurante não está configurado para delivery."})
+#         if configs.enable_delivery == False:
+#             raise serializers.ValidationError({"detail":"Este restaurante não aceita delivery no momento."})
+        
+
+#         validated_data['status'] = OrderStatus.objects.filter(
+#             restaurant=restaurant,
+#         ).order_by('order').first()
+
+#         orders = validated_data.get('order_items', None)
+
+#         order_group = super().create({
+#             'status':validated_data.get('status', None),
+#             'restaurant':validated_data.get('restaurant', None),
+#             'type':'DELIVERY',
+#             'total':0,
+#             'notes':validated_data.get('notes', None),
+#         })
+
+#         order_items_output = []
+        
+#         if orders is None or len(orders) == 0:
+#             raise serializers.ValidationError({"detail":"É necessário informar os itens do pedido."})
+        
+#         for order in orders:
+#             order_db = None
+#             try: 
+#                 product = Product.objects.get(id=order['product_id'])
+#                 product_price = ProductPrice.objects.filter(product=product, price=order['product_price']).first()
+#                 if product_price is None:
+#                     raise serializers.ValidationError({"detail":"Preço do produto inválido."})
+#                 if product.printer is not None:
+#                     printer = product.printer.name
+#                 else:
+#                     printer = None
+#                 order_items_output.append({
+#                     'product_id':  order['product_id'],
+#                     'product_title':  product.title,
+#                     'product_price':  product_price.price,
+#                     'notes': order.get('notes', ''),
+#                     'quantity': order['quantity'],
+#                     'printer_name': printer,
+#                     'items': [],
+#                 })
+#                 order_db = Order.objects.create(
+#                     product=product,
+#                     note=order.get('notes', ''),
+#                     quantity=order['quantity'],
+#                     unit_price=product_price.price,
+#                     order_group=order_group,
+#                     product_title=product.title,
+#                     total=float(product.price)* float(order['quantity']),
+#                 )
+#                 order_db.save()
+#                 if len(order['complements'])> 0:
+#                     for complement in order['complements']:
+#                         order_items_output[-1]['items'].append({
+#                             'complement_id': complement['complement_id'],
+#                             'complement_title': complement['complement_title'],
+#                             'items': [],
+#                         })
+#                         if len(complement['items']) > 0:
+#                             try:
+#                                 complement_group = ProductComplementCategory.objects.get(id=complement['complement_id'])
+#                             except ProductComplementCategory.DoesNotExist:
+#                                 raise serializers.ValidationError({"detail":"Categoria de complemento não encontrada."})
+#                             complement_db = OrderComplement.objects.create(
+#                                 order=order_db,
+#                                 complement_group=complement_group,
+#                             )
+#                             complement_db.save()
+#                             if len(complement['items']):
+#                                 for item in complement['items']:
+#                                     order_items_output[-1]['items'][-1]['items'].append({
+#                                         'item_id': item['item_id'],
+#                                         'item_title': item['item_title'],
+#                                         'quantity': item['quantity'],
+#                                     })
+#                                     try:
+#                                         complement_item = ProductComplementItem.objects.get(id=item['item_id'])
+#                                     except ProductComplementItem.DoesNotExist:
+#                                         raise serializers.ValidationError({"detail":"Complemento não encontrado."})
+#                                     complement_price = ComplementPrice.objects.filter(product_complement_item=complement_item, price=item['item_price']).first()
+#                                     if complement_price is None:
+#                                         raise serializers.ValidationError({"detail":"Preço do complemento inválido."})
+#                                     complement_item_db = OrderComplementItem.objects.create(
+#                                         order_complement=complement_db,
+#                                         complement=complement_item,
+#                                         unit_price=complement_price.price,
+#                                         quantity=item['quantity'],
+#                                     )
+#                                     complement_item_db.save()
+#             except Product.DoesNotExist:
+#                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
+#         order_group.order_items = order_items_output
+#         cashier = None
+#         try:
+#             cashier = Cashier.objects.get(open=True, restaurant=restaurant)
+#         except Cashier.DoesNotExist:
+#             raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
+
+#         # payment_group = PaymentGroup.objects.create(
+#         #     tip= 0,
+#         #     total= 0,
+#         #     type= 'TAKEOUT',
+#         #     cashier= cashier,
+#         # )
+
+#         # if len(validated_data.get('payment_methods', [])) > 0:
+#         #     for payment_method in validated_data.get('payment_methods', []):
+#         #         try:
+#         #             method = PaymentMethod.objects.get(id=payment_method['id'])
+#         #         except PaymentMethod.DoesNotExist:
+#         #             raise serializers.ValidationError({"detail":"Forma de pagamento não encontrada."})
+#         #         payment = Payment.objects.create(
+#         #             payment_group=payment_group,
+#         #             payment_method=method,
+#         #             value=payment_method['value'],
+#         #         )
+#         #         payment.save()
+#         # else:
+#             # raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
+#         delivery_price = 0
+#         delivery = DeliveryOrder.objects.create(
+#             client=validated_data.get('client', None),
+#             client_name=validated_data.get('client', None).name,
+#             client_phone=validated_data.get('client', None).phone,
+#             street = validated_data.get('adress', None).street,
+#             number = validated_data.get('adress', None).number,
+#             complement = validated_data.get('adress', None).complement,
+#             neighborhood = validated_data.get('adress', None).neighborhood,
+#             city = validated_data.get('adress', None).city,
+#             state = validated_data.get('adress', None).state,
+#             postal_code = validated_data.get('adress', None).postal_code,
+#             order_group=order_group,
+#             cashier=cashier,
+#             payment_group=payment_group,
+#             sequence=sequence,
+#         )
+
+#         json_r = {
+#             "id": order_group.id,
+#             "status": {
+#                 "id": order_group.status.id,
+#                 "status": order_group.status.status
+#             },
+#             "created": str(order_group.created),
+#             "collaborator_name": order_group.collaborator_name,
+#             "collaborator": EmployerOrderSerializer(order_group.collaborator).data,
+#             "total": str(order_group.total),
+#             "order_number": order_group.order_number,
+#             "restaurant": {
+#                 "id": validated_data.get('restaurant', None).id or None,
+#                 "title": validated_data.get('restaurant', None).title or None,
+#             },
+#             "type": order_group.type,
+#             "order_items": order_group.order_items,
+#             "takeout_order": takeout.id,
+#         }
+
+
+#         if validated_data.get('from_app', False):
+#             channel_layer = get_channel_layer()
+#             async_to_sync(channel_layer.group_send)(
+#                 "pedidos_%s" % restaurant.id,
+#                 {"type": "order",
+#                     "message": json.dumps(json_r, cls=UUIDEncoder)
+#                 }
+#             )
+#         return order_group
+
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderStatus
+        fields = '__all__'

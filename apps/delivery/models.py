@@ -7,7 +7,7 @@ from model_utils.models import (
     UUIDModel,
 )
 from apps.restaurants.models import Restaurant
-from apps.financial.models import OrderGroup
+from apps.financial.models import OrderGroup, PaymentMethod
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
@@ -94,5 +94,7 @@ class DeliveryOrder(TimeStampedModel, UUIDModel):
 
     order_group = models.OneToOneField(OrderGroup, verbose_name=_('Order group'), related_name='delivery_order', on_delete=models.CASCADE)
 
+    payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.SET_NULL, null=True,related_name='payments_methods')
+    payment_method_title = models.CharField(_('Payment Method title'), max_length=255, blank=True, null=True)
     def __str__(self):
         return self.order_group.order_number
