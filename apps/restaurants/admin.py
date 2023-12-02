@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister, ProductPrice, ComplementPrice
+from .models import ProductComplementItem, Restaurant, Employer, Product, ProductCategory, ProductComplementCategory, RestauratCategory, Table, Catalog, Printer, Sidebar, AutoRegister, ProductPrice, ComplementPrice, AutoUpdate
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter
 from django.utils.translation import gettext as _
@@ -162,6 +162,9 @@ class SidebarAdmin(admin.ModelAdmin):
 @admin.register(AutoRegister)
 class AutoRegisterAdmin(admin.ModelAdmin):
     pass
+@admin.register(AutoUpdate)
+class AutoUpdateAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(ProductPrice)
@@ -169,3 +172,4 @@ class ProductPriceAdmin(admin.ModelAdmin):
     # inlines = [ProductComplementPriceInline,]
     list_display = ['product', 'price', 'tag']
     list_filter = ['product__product_category__restaurant', ('tag', ChoiceDropdownFilter)]
+

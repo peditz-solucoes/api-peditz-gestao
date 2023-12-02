@@ -80,7 +80,6 @@ class DeliveryOrder(TimeStampedModel, UUIDModel):
     client = models.ForeignKey(Client, verbose_name=_('Client'), on_delete=models.SET_NULL,null=True, blank=True, related_name='delivery_orders')
     client_name = models.CharField(_('Client name'), max_length=255, blank=True, null=True)
     client_phone = PhoneNumberField(_('Client phone'), region='BR', blank=True, null=True)
-
     street = models.CharField(_('Street'), max_length=255, blank=True, null=True)
     number = models.CharField(_('Number'), max_length=255, blank=True, null=True)
     complement = models.CharField(_('Complement'), max_length=255, blank=True, null=True)
@@ -96,5 +95,7 @@ class DeliveryOrder(TimeStampedModel, UUIDModel):
 
     payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.SET_NULL, null=True,related_name='payments_methods')
     payment_method_title = models.CharField(_('Payment Method title'), max_length=255, blank=True, null=True)
+
+    troco = models.DecimalField(_('Troco'), max_digits=10, decimal_places=2, default=0.00)
     def __str__(self):
         return self.order_group.order_number
