@@ -97,6 +97,7 @@ class Restaurant(TimeStampedModel, UUIDModel):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='restaurants')
     photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
     category = models.ForeignKey(RestauratCategory, on_delete=models.SET_NULL, related_name='restaurants', null=True, blank=True)
+    neighborhood = models.CharField(max_length=255, default='', blank=True, null=True)
     open = models.BooleanField(default=True)
     active = models.BooleanField(default=True)
     open_time = models.TimeField(blank=True, null=True)
@@ -319,6 +320,15 @@ class AutoRegister(TimeStampedModel, UUIDModel):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='auto_registers')
     def __str__(self):
         return self.restaurant.title + ' ' + str(self.created)
+class AutoUpdate(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Auto Update')
+        verbose_name_plural = _('Auto Update')
+    
+    csv = models.FileField(upload_to=upload_path_csv, blank=True, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='auto_updates')
+    def __str__(self):
+        return self.restaurant.title + ' ' + str(self.created)
     
 
 @receiver(post_save, sender=AutoRegister)
@@ -373,6 +383,46 @@ def auto_register(sender, instance, created, **kwargs):
                 )[0]
                 price.save()
                 print(product)
+        else:
+            print(f"Failed to fetch CSV file: {response.status_code}")
+                
+
+@receiver(post_save, sender=AutoUpdate)
+@transaction.atomic
+def auto_update(sender, instance, created, **kwargs):
+    if created:
+        response = requests.get(instance.csv.url)
+        
+        # Verifique se a solicitação foi bem-sucedida
+        if response.status_code == 200:
+            content = response.content.decode('utf-8')
+            lines = content.splitlines()
+            reader = csv.reader(lines)
+            next(reader)
+            for row in reader:
+                try:
+                    product = Product.objects.get(
+                        title = row[0],
+                        product_category__restaurant = instance.restaurant,
+                    )
+                    decimal_price = Decimal(row[7])
+                    product.codigo_ncm = row[4]
+                    product.codigo_produto = row[5]
+                    product.icms_aliquota = Decimal(row[6].replace('.', '').replace(',', '.'))
+                    product.icms_base_calculo = decimal_price
+                    product.icms_modalidade_base_calculo = row[8]
+                    product.icms_origem = row[9]
+                    product.icms_situacao_tributaria = row[10]
+                    product.product_tax_description = row[11]
+                    product.unidade_comercial = row[12]
+                    product.unidade_tributavel = row[13]
+                    product.valor_unitario_comercial = decimal_price
+                    product.valor_unitario_tributavel = decimal_price
+                    product.cfop = row[16]
+                    product.save()
+                    print(product)
+                except Product.DoesNotExist:
+                    pass
         else:
             print(f"Failed to fetch CSV file: {response.status_code}")
                 

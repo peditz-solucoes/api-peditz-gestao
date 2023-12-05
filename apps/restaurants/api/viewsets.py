@@ -217,12 +217,13 @@ class ProductPriceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         try:
-            return  ProductPrice.objects.filter(product__product_category__restaurant=user.employer.restaurant).order_by('product__product_category__title','product__order', 'product__title')
+            return  ProductPrice.objects.filter(product__product_category__restaurant=user.employer.restaurant).order_by('product__product_category__order','product__order')
         except AttributeError:
             try:
-                return  ProductPrice.objects.filter(product__product_category__restaurant=user.restaurants).order_by('product__product_category__title', 'product__order', 'product__title')
+                return  ProductPrice.objects.filter(product__product_category__restaurant=user.restaurants).order_by('product__product_category__order', 'product__order')
             except AttributeError:
-                return Product.objects.none()
+                return ProductPrice.objects.none()
+            
 class CatalogCrudViewSet(viewsets.ModelViewSet):
     serializer_class = CatalogCrudSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)

@@ -45,7 +45,8 @@ from apps.financial.api.viewsets import (
     PaymentGroupViewSet,
     CloseBillViewSet,
     TakeOutOurderViewSet,
-    OrderStatusViewSet
+    OrderStatusViewSet,
+    DeliveryOrderViewSet
 )
 from apps.inventory.api.viewsets import (
     ItemStockViewSet,
@@ -54,6 +55,8 @@ from apps.inventory.api.viewsets import (
     ItemIngredientViewSet,
     ProductItemStockViewset
 )
+
+from apps.delivery.api.viewsets import ClientViewSet, ClientAdressViewSet, PaymentMethodsDeliveryViewSet, DeliveryViewsets, DeliveryConfigsViewSet
 
 import os
 from apps.ifood.api.viewsets import IfoodAuthCodeViewSet, IfoodAuthTokenViewSet, IfoodMerchantsViewSet
@@ -105,6 +108,12 @@ router.register(r'ifood-auth-token', IfoodAuthTokenViewSet, basename='ifood-auth
 router.register(r'ifood-merchants', IfoodMerchantsViewSet, basename='ifood-merchants')
 router.register(r'product-stats', ProductsStatsViewSet, basename='product-stats')
 router.register(r'order-status', OrderStatusViewSet, basename='order-status')
+router.register(r'delivery-order', DeliveryOrderViewSet, basename='delivery-order')
+router.register(r'client', ClientViewSet, basename='client')
+router.register(r'client-adress', ClientAdressViewSet, basename='client-adress')
+router.register(r'payment-methods-delivery', PaymentMethodsDeliveryViewSet, basename='payment-methods-delivery')
+router.register(r'delivery', DeliveryViewsets, basename='delivery')
+router.register(r'delivery-configs', DeliveryConfigsViewSet, basename='delivery-configs')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

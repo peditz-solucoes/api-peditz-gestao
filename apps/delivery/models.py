@@ -7,7 +7,7 @@ from model_utils.models import (
     UUIDModel,
 )
 from apps.restaurants.models import Restaurant
-from apps.financial.models import OrderGroup, PaymentMethod
+from apps.financial.models import OrderGroup, PaymentMethod, PaymentGroup
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
 from localflavor.br.models import BRCPFField, BRPostalCodeField, BRStateField
@@ -71,6 +71,8 @@ class DeliveryRestaurantConfig(TimeStampedModel, UUIDModel):
 
     def __str__(self):
         return self.restaurant.title
+    
+
 
 class DeliveryOrder(TimeStampedModel, UUIDModel):
     class Meta:
@@ -80,7 +82,6 @@ class DeliveryOrder(TimeStampedModel, UUIDModel):
     client = models.ForeignKey(Client, verbose_name=_('Client'), on_delete=models.SET_NULL,null=True, blank=True, related_name='delivery_orders')
     client_name = models.CharField(_('Client name'), max_length=255, blank=True, null=True)
     client_phone = PhoneNumberField(_('Client phone'), region='BR', blank=True, null=True)
-
     street = models.CharField(_('Street'), max_length=255, blank=True, null=True)
     number = models.CharField(_('Number'), max_length=255, blank=True, null=True)
     complement = models.CharField(_('Complement'), max_length=255, blank=True, null=True)
@@ -96,5 +97,39 @@ class DeliveryOrder(TimeStampedModel, UUIDModel):
 
     payment_method = models.ForeignKey(PaymentMethod, verbose_name=_('Payment Method'), on_delete=models.SET_NULL, null=True,related_name='payments_methods')
     payment_method_title = models.CharField(_('Payment Method title'), max_length=255, blank=True, null=True)
+
+    troco = models.DecimalField(_('Troco'), max_digits=10, decimal_places=2, default=0.00)
+    payment_group = models.OneToOneField(PaymentGroup, verbose_name=_('Payment Group'), related_name='delivery_order', on_delete=models.SET_NULL, blank=True, null=True)
+
+    canceled = models.BooleanField(_('Canceled'), default=False)
+
+    takeaway = models.BooleanField(_('Takeaway'), default=False)
+    
+    def get_status_display(self):
+        return self.status
+
+
     def __str__(self):
-        return self.order_group.order_number
+        return f'{self.client_name} - pedido {self.order_group.order_number}'
+
+
+class DeliveryStatus(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Delivery status')
+        verbose_name_plural = _('Delivery status')
+        unique_together = ('title', 'order')
+
+    AVAILIBLE_DELIVERY_STATUS = (
+        ('WAITING', 'Aguardando confirmação do restaurante'),
+        ('IN_PROGRESS', 'Em produção'),
+        ('IN_ROUTE', 'Saiu para entrega'),
+        ('DELIVERED', 'Entregue'),
+        ('CANCELED', 'Cancelado'),
+    )
+
+    title = models.CharField(_('Title'), max_length=11, choices=AVAILIBLE_DELIVERY_STATUS, default='WAITING')
+    order = models.ForeignKey(DeliveryOrder, verbose_name=_('Order'), on_delete=models.CASCADE, related_name='status')
+    
+
+    def __str__(self):
+        return self.title + ' - ' + self.order.order_group.restaurant.title + ' - ' + str(self.order.order_group.order_number)

@@ -30,7 +30,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='restaurant-detail')
     category_detail = serializers.SerializerMethodField(read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=RestauratCategory.objects.all(), write_only=True) 
-
     class Meta:
         model = Restaurant
         fields = ['id', 'owner', 'url', 'category', 'category_detail', 
@@ -47,6 +46,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
                     'complement',
                     'photo',
                     'open',
+                    'neighborhood',
                 ]
 
     def get_category_detail(self, obj):

@@ -11,6 +11,7 @@ from .models import (
     OrderGroup,
     TakeoutOrder,
     PaymentGroup,
+    CancelationReason
 )
 # Register your models here.
 from django_admin_listfilter_dropdown.filters import ChoiceDropdownFilter, RelatedDropdownFilter, DropdownFilter, SimpleDropdownFilter
@@ -100,3 +101,7 @@ class PaymentGroupAdmin(admin.ModelAdmin):
     inlines = [BillsInline,PaymentInline]
     list_filter = [('cashier__restaurant', RelatedDropdownFilter), ('type', DropdownFilter), 'created']
 
+
+@admin.register(CancelationReason)
+class CancelationReasonAdmin(admin.ModelAdmin):
+    pass
