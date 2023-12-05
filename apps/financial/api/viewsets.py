@@ -85,7 +85,7 @@ class TakeOutOurderViewSet(viewsets.ModelViewSet):
             return OrderGroup.objects.none()
 class DeliveryOrderViewSet(viewsets.ModelViewSet):
     serializer_class = DeliveryOrderSerialier
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
     queryset = OrderGroup.objects.all().order_by('created')
     http_method_names = ['post']
 

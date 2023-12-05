@@ -7,10 +7,16 @@ from .models import (
     ClientAdress,
     DeliveryOrder,
     DeliveryRestaurantConfig,
+    DeliveryStatus,
 )
 
 class ClientAdressInline(admin.TabularInline):
     model = ClientAdress
+
+
+class DeliveryStatusInline(admin.TabularInline):
+    model = DeliveryStatus
+
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
@@ -22,7 +28,7 @@ class ClientAdressAdmin(admin.ModelAdmin):
 
 @admin.register(DeliveryOrder)
 class DeliveryOrderAdmin(admin.ModelAdmin):
-    pass
+    inlines = [DeliveryStatusInline]
 
 @admin.register(DeliveryRestaurantConfig)
 class DeliveryRestaurantConfigAdmin(admin.ModelAdmin):

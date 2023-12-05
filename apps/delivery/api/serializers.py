@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from ..models import Client, ClientAdress
+from ..models import Client, ClientAdress, DeliveryOrder, DeliveryStatus
 
 from apps.financial.models import PaymentMethod
+from apps.financial.api.serializers import OrderGroupListSerializer
 
 
 class ClientAdressSerializer(serializers.ModelSerializer):
@@ -38,5 +39,21 @@ class PaymentMethodsSerializer(serializers.ModelSerializer):
             'title',
             'active',
             'id',
-            'restaurant'
+            'restaurant',
+            'needs_change',
         ]
+
+
+class DeliveryStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliveryStatus
+        fields = '__all__'
+
+class OrderSerializer(serializers.ModelSerializer):
+
+    status = DeliveryStatusSerializer(read_only=True, many=True)
+    payment_method = PaymentMethodsSerializer(read_only=True)
+    order_group = OrderGroupListSerializer(read_only=True)
+    class Meta:
+        model = DeliveryOrder
+        fields = '__all__'

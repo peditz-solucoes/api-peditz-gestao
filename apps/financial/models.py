@@ -250,7 +250,7 @@ class Order(TimeStampedModel, UUIDModel):
     note = models.TextField(_('Note'), blank=True, null=True)
     total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, blank=True, null=True, default=0)
     
-    
+    active = models.BooleanField(_('Active'), default=True)
 
     def __str__(self):
         return f'pedido {self.order_group.order_number} - {self.product_title}'
@@ -351,7 +351,8 @@ class PaymentMethod(TimeStampedModel, UUIDModel):
     tax = models.DecimalField(_('Tax'), max_digits=10, decimal_places=2, default=0)
     payout_schedule = models.IntegerField(_('Payout schedule'), help_text=_("Number of days to receive the payment"), default=0)
     restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='payment_methods')
-
+    acept_on_delivery = models.BooleanField(_('Acept on delivery'), default=True)
+    needs_change = models.BooleanField(_('Needs change'), default=False)
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -393,5 +394,32 @@ class Payment(TimeStampedModel, UUIDModel):
     
             
 
+
+class CancelationReason(TimeStampedModel, UUIDModel):
+    class Meta:
+        verbose_name = _('Cancelation Reason')
+        verbose_name_plural = _('Cancelation Reasons')
+        ordering = ['-created']
+
+    CANCEL_TYPES = (
+        ('ORDER', 'Pedido'),
+        ('BILL', 'Comanda'),
+    )
+
+    title = models.CharField(_('Title'), max_length=255)
+    type = models.CharField(_('Type'), max_length=255, choices=CANCEL_TYPES, default='ORDER')
+    restaurant = models.ForeignKey(Restaurant, verbose_name=_('Restaurant'), on_delete=models.CASCADE, related_name='cancelation_reasons')
+    reason = models.TextField(_('Reason'), blank=True, null=True)
+    operator = models.ForeignKey(User, verbose_name=_('Operator'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
+    product = models.ForeignKey(Product, verbose_name=_('Product'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
+    product_title = models.CharField(_('Product title'), max_length=255, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.product:
+            self.product_title = self.product.title
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.title} - {self.restaurant.title}'
 
     

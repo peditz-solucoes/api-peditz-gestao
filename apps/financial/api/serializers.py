@@ -9,7 +9,7 @@ from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
-from apps.delivery.models import Client, DeliveryRestaurantConfig, DeliveryOrder, ClientAdress
+from apps.delivery.models import Client, DeliveryRestaurantConfig, DeliveryOrder, ClientAdress, DeliveryStatus
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -766,8 +766,10 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
     order_items = serializers.JSONField()
     payment_method = serializers.PrimaryKeyRelatedField(queryset=PaymentMethod.objects.all(), write_only=True)
     client = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all(), write_only=True)
-    adress = serializers.PrimaryKeyRelatedField(queryset=ClientAdress.objects.all(), write_only=True)
-    troco = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True, allow_null=True, required=False)
+    adress = serializers.PrimaryKeyRelatedField(queryset=ClientAdress.objects.all(), write_only=True, allow_null=True, allow_empty=True)
+    troco = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True, default=0)
+    takeaway = serializers.BooleanField(write_only=True, default=False)
+    delivery_order = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = OrderGroup
         fields = [
@@ -786,8 +788,17 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
             'restaurant_id',
             'adress',
             'troco',
+            'takeaway',
+            'delivery_order',
         ]
         read_only_fields = ['total', 'order_number', 'type', 'restaurant']
+
+    def get_delivery_order(self, obj):
+        try:
+            delivery = DeliveryOrder.objects.get(order_group=obj)
+            return delivery.id
+        except DeliveryOrder.DoesNotExist:
+            return None
     
     @transaction.atomic
     def create(self, validated_data):
@@ -808,12 +819,18 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
 
         orders = validated_data.get('order_items', None)
 
+        cashier = None
+        try:
+            cashier = Cashier.objects.get(open=True, restaurant=restaurant)
+        except Cashier.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
         order_group = super().create({
             'status':validated_data.get('status', None),
             'restaurant':validated_data.get('restaurant', None),
             'type':'DELIVERY',
             'total':0,
             'notes':validated_data.get('notes', None),
+            'cashier': cashier,
         })
 
         order_items_output = []
@@ -824,8 +841,8 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
         for order in orders:
             order_db = None
             try: 
-                product = Product.objects.get(id=order['product_id'])
-                product_price = ProductPrice.objects.filter(product=product, price=order['product_price']).first()
+                product_price = ProductPrice.objects.get(id=order['product_id'])
+                product = product_price.product
                 if product_price is None:
                     raise serializers.ValidationError({"detail":"Preço do produto inválido."})
                 if product.printer is not None:
@@ -892,54 +909,37 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
             except Product.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
         order_group.order_items = order_items_output
-        cashier = None
-        try:
-            cashier = Cashier.objects.get(open=True, restaurant=restaurant)
-        except Cashier.DoesNotExist:
-            raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
 
-        # payment_group = PaymentGroup.objects.create(
-        #     tip= 0,
-        #     total= 0,
-        #     type= 'TAKEOUT',
-        #     cashier= cashier,
-        # )
-
-        # if len(validated_data.get('payment_methods', [])) > 0:
-        #     for payment_method in validated_data.get('payment_methods', []):
-        #         try:
-        #             method = PaymentMethod.objects.get(id=payment_method['id'])
-        #         except PaymentMethod.DoesNotExist:
-        #             raise serializers.ValidationError({"detail":"Forma de pagamento não encontrada."})
-        #         payment = Payment.objects.create(
-        #             payment_group=payment_group,
-        #             payment_method=method,
-        #             value=payment_method['value'],
-        #         )
-        #         payment.save()
-        # else:
-            # raise serializers.ValidationError({"detail":"É necessário informar as formas de pagamento."})
         delivery_price = 0
+        print (validated_data.get('adress', None))
         delivery = DeliveryOrder.objects.create(
             client=validated_data.get('client', None),
             client_name=validated_data.get('client', None).name,
             client_phone=validated_data.get('client', None).phone,
-            street = validated_data.get('adress', None).street,
-            number = validated_data.get('adress', None).number,
-            complement = validated_data.get('adress', None).complement,
-            neighborhood = validated_data.get('adress', None).neighborhood,
-            city = validated_data.get('adress', None).city,
-            state = validated_data.get('adress', None).state,
-            postal_code = validated_data.get('adress', None).postal_code,
+            number = validated_data.get('adress', None).number if validated_data.get('adress', None) else None,
+            street = validated_data.get('adress', None).street if validated_data.get('adress', None) else None,
+            complement = validated_data.get('adress', None).complement if validated_data.get('adress', None) else None,
+            neighborhood = validated_data.get('adress', None).neighborhood if validated_data.get('adress', None) else None,
+            city = validated_data.get('adress', None).city if validated_data.get('adress', None) else None,
+            state = validated_data.get('adress', None).state if validated_data.get('adress', None) else None,
+            postal_code = validated_data.get('adress', None).postal_code if validated_data.get('adress', None) else None,
             order_group=order_group,
             delivery_price=delivery_price,
-            troco=validated_data.get('troco', None),
+            troco=validated_data.get('troco', 0),
             payment_method=validated_data.get('payment_method', None),
             payment_method_title=validated_data.get('payment_method', None).title,
+            takeaway=validated_data.get('takeaway', False),
         )
 
+        delivery.save()
+
+        delivery_status = DeliveryStatus.objects.create(
+            order=delivery,
+        )
+        delivery_status.save()
+
         json_r = {
-            "id": order_group.id,
+            "id": delivery.id,
             "status": {
                 "id": order_group.status.id,
                 "status": order_group.status.status

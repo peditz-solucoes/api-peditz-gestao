@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 
-from ..models import Client, ClientAdress
-from .serializers import ClientSerializer, ClientAdressSerializer, PaymentMethodsSerializer
+from ..models import Client, ClientAdress, DeliveryOrder
+from .serializers import ClientSerializer, ClientAdressSerializer, PaymentMethodsSerializer, OrderSerializer
 from apps.financial.models import PaymentMethod
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
@@ -17,7 +17,12 @@ class ClientAdressViewSet(viewsets.ModelViewSet):
 
 class PaymentMethodsDeliveryViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentMethodsSerializer
-    queryset = PaymentMethod.objects.filter(active=True)
+    queryset = PaymentMethod.objects.filter(active=True, acept_on_delivery=True)
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['restaurant']
+
+class DeliveryViewsets(viewsets.ModelViewSet):
+    serializer_class = OrderSerializer
+    queryset = DeliveryOrder.objects.all()
+    http_method_names = ['get']
