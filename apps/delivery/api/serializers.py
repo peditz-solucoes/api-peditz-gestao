@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from ..models import Client, ClientAdress, DeliveryOrder, DeliveryStatus
+
+from apps.restaurants.api.serializers import RestaurantSerializer
+
+from ..models import Client, ClientAdress, DeliveryOrder, DeliveryStatus, DeliveryRestaurantConfig
 
 from apps.financial.models import PaymentMethod
 from apps.financial.api.serializers import OrderGroupListSerializer
@@ -56,4 +59,10 @@ class OrderSerializer(serializers.ModelSerializer):
     order_group = OrderGroupListSerializer(read_only=True)
     class Meta:
         model = DeliveryOrder
+        fields = '__all__'
+
+class DeliveryConfigSerializer(serializers.ModelSerializer):
+    restaurant = RestaurantSerializer(read_only=True)
+    class Meta:
+        model = DeliveryRestaurantConfig
         fields = '__all__'

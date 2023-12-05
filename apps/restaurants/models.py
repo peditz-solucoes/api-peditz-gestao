@@ -97,6 +97,7 @@ class Restaurant(TimeStampedModel, UUIDModel):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='restaurants')
     photo = models.ImageField(upload_to=upload_path, blank=True, null=True, verbose_name=_('Picture'))
     category = models.ForeignKey(RestauratCategory, on_delete=models.SET_NULL, related_name='restaurants', null=True, blank=True)
+    neighborhood = models.CharField(max_length=255, default='', blank=True, null=True)
     open = models.BooleanField(default=True)
     active = models.BooleanField(default=True)
     open_time = models.TimeField(blank=True, null=True)

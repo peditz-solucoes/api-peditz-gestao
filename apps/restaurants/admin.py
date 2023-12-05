@@ -37,6 +37,7 @@ class ResstaurantAdmin(admin.ModelAdmin):
                 'street',
                 'number',
                 'complement',
+                'neighborhood',
             ],
             'classes': ('collapse',),
         }),

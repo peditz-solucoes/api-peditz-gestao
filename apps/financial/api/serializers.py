@@ -770,6 +770,7 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
     troco = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True, default=0)
     takeaway = serializers.BooleanField(write_only=True, default=False)
     delivery_order = serializers.SerializerMethodField(read_only=True)
+    delivery_price = serializers.DecimalField(max_digits=10, decimal_places=2, write_only=True, default=0)
     class Meta:
         model = OrderGroup
         fields = [
@@ -790,6 +791,7 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
             'troco',
             'takeaway',
             'delivery_order',
+            'delivery_price',
         ]
         read_only_fields = ['total', 'order_number', 'type', 'restaurant']
 
@@ -910,8 +912,7 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
                 raise serializers.ValidationError({"detail":"Produto não encontrado."})
         order_group.order_items = order_items_output
 
-        delivery_price = 0
-        print (validated_data.get('adress', None))
+        delivery_price = validated_data.get('delivery_price', 0)
         delivery = DeliveryOrder.objects.create(
             client=validated_data.get('client', None),
             client_name=validated_data.get('client', None).name,
