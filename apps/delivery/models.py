@@ -129,7 +129,21 @@ class DeliveryStatus(TimeStampedModel, UUIDModel):
 
     title = models.CharField(_('Title'), max_length=11, choices=AVAILIBLE_DELIVERY_STATUS, default='WAITING')
     order = models.ForeignKey(DeliveryOrder, verbose_name=_('Order'), on_delete=models.CASCADE, related_name='status')
+    position = models.IntegerField(_('Position'), default=0)
+    time = models.IntegerField(_('Time'), default=0)
     
+    def save(self, *args, **kwargs):
+        if self.title == 'WAITING':
+            self.position = 0
+        elif self.title == 'IN_PROGRESS':
+            self.position = 1
+        elif self.title == 'IN_ROUTE':
+            self.position = 2
+        elif self.title == 'DELIVERED':
+            self.position = 3
+        elif self.title == 'CANCELED':
+            self.position = 4
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title + ' - ' + self.order.order_group.restaurant.title + ' - ' + str(self.order.order_group.order_number)

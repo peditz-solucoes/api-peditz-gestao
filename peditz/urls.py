@@ -56,7 +56,7 @@ from apps.inventory.api.viewsets import (
     ProductItemStockViewset
 )
 
-from apps.delivery.api.viewsets import ClientViewSet, ClientAdressViewSet, PaymentMethodsDeliveryViewSet, DeliveryViewsets, DeliveryConfigsViewSet
+from apps.delivery.api.viewsets import ClientViewSet, ClientAdressViewSet, PaymentMethodsDeliveryViewSet, DeliveryViewsets, DeliveryConfigsViewSet, DeliveryRestaurantViewsets, DeliveryStatusViewSet, PaymentDelverysViewSet
 
 import os
 from apps.ifood.api.viewsets import IfoodAuthCodeViewSet, IfoodAuthTokenViewSet, IfoodMerchantsViewSet
@@ -114,6 +114,9 @@ router.register(r'client-adress', ClientAdressViewSet, basename='client-adress')
 router.register(r'payment-methods-delivery', PaymentMethodsDeliveryViewSet, basename='payment-methods-delivery')
 router.register(r'delivery', DeliveryViewsets, basename='delivery')
 router.register(r'delivery-configs', DeliveryConfigsViewSet, basename='delivery-configs')
+router.register(r'delivery-restaurant', DeliveryRestaurantViewsets, basename='delivery-restaurant')
+router.register(r'delivery-status', DeliveryStatusViewSet, basename='delivery-status')
+router.register(r'payment-delivery', PaymentDelverysViewSet, basename='payment-delivery')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

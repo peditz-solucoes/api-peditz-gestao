@@ -960,14 +960,13 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
         }
 
 
-        if validated_data.get('from_app', False):
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "pedidos_%s" % restaurant.id,
-                {"type": "order",
-                    "message": json.dumps(json_r, cls=UUIDEncoder)
-                }
-            )
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "pedidos_%s" % restaurant.id,
+            {"type": "delivery",
+                "message": json.dumps({"delivery": True}, cls=UUIDEncoder)
+            }
+        )
         return order_group
 
 
