@@ -898,13 +898,13 @@ class DeliveryOrderSerialier(serializers.ModelSerializer):
                                         complement_item = ProductComplementItem.objects.get(id=item['item_id'])
                                     except ProductComplementItem.DoesNotExist:
                                         raise serializers.ValidationError({"detail":"Complemento não encontrado."})
-                                    complement_price = ComplementPrice.objects.filter(product_complement_item=complement_item, price=item['item_price']).first()
-                                    if complement_price is None:
-                                        raise serializers.ValidationError({"detail":"Preço do complemento inválido."})
+                                    # complement_price = ComplementPrice.objects.filter(product_complement_item=complement_item, price=item['item_price']).first()
+                                    # if complement_price is None:
+                                    #     raise serializers.ValidationError({"detail":"Preço do complemento inválido."})
                                     complement_item_db = OrderComplementItem.objects.create(
                                         order_complement=complement_db,
                                         complement=complement_item,
-                                        unit_price=complement_price.price,
+                                        unit_price=complement_item.price,
                                         quantity=item['quantity'],
                                     )
                                     complement_item_db.save()
