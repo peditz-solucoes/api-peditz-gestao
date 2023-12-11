@@ -231,7 +231,41 @@ class ProductComplementItemSerializer(serializers.ModelSerializer):
             'price',
             'min_value',
             'max_value',
+            'complementCategory',
+            'active'
         ]
+
+    def create(self, validated_data):
+        complement_item = super().create(validated_data)
+        try:
+            complement_price = ComplementPrice.objects.get(
+                    product_complement_item = complement_item,
+                    tag='cardapio_digital',
+                    price=validated_data.get('price', complement_item.price)
+            )
+        except ComplementPrice.DoesNotExist:
+            complement_price = ComplementPrice.objects.create(
+                    product_complement_item = complement_item,
+                    tag='cardapio_digital',
+                    price=validated_data.get('price', complement_item.price)
+            )
+        complement_price.save()
+        return complement_item
+    
+    def update(self, instance, validated_data):
+        try:
+            complement_price = ComplementPrice.objects.get(
+                    product_complement_item = instance,
+                    tag='cardapio_digital'
+            )
+        except ComplementPrice.DoesNotExist:
+            complement_price = ComplementPrice.objects.create(
+                    product_complement_item = instance,
+                    tag='cardapio_digital'
+            )
+        complement_price.price = validated_data.get('price', instance.price)
+        complement_price.save()
+        return super().update(instance, validated_data)
 
 
 class ProductComplementSerializer(serializers.ModelSerializer):
@@ -377,7 +411,7 @@ class ProductPriceSerializer(serializers.ModelSerializer):
 
 class CatalogSerializer(serializers.ModelSerializer):
     products_prices = serializers.SerializerMethodField(read_only=True)
-    complement_prices = ProductComplementPriceSerializer(many=True, read_only=True)
+    complement_prices = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Catalog
         fields = [
@@ -394,6 +428,11 @@ class CatalogSerializer(serializers.ModelSerializer):
     def get_products_prices(self, obj):
         product_prices = obj.products_prices.filter(product__active=True, product__product_category__active=True, product__product_category__restaurant__active=True).order_by('product__product_category__order', 'product__product_category__title','product__order', 'product__title')
         serializer = ProductPriceListSerializer(product_prices, many=True)
+        return serializer.data
+    
+    def get_complement_prices(self, obj):
+        complement_prices = obj.complement_prices.filter(product_complement_item__active=True).order_by('product_complement_item__order')
+        serializer = ProductComplementPriceSerializer(complement_prices, many=True)
         return serializer.data
     
 

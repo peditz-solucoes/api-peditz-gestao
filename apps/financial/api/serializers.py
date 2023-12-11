@@ -409,7 +409,6 @@ class DeleteOrderSerializer(serializers.ModelSerializer):
             employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('order_id', None).order_group.restaurant)
         except Employer.DoesNotExist:
             raise serializers.ValidationError({"detail":"Código de operador inválido."})
-        print(employer)
         try:
             order = Order.objects.get(id=validated_data.get('order_id', None).id)
         except Order.DoesNotExist:
