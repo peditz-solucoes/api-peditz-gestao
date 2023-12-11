@@ -261,9 +261,9 @@ class ProductComplementItemSerializer(serializers.ModelSerializer):
         except ComplementPrice.DoesNotExist:
             complement_price = ComplementPrice.objects.create(
                     product_complement_item = instance,
-                    tag='cardapio_digital'
+                    tag='cardapio_digital',
+                    price=validated_data.get('price', instance.price)
             )
-        complement_price.price = validated_data.get('price', instance.price)
         complement_price.save()
         return super().update(instance, validated_data)
 
