@@ -128,9 +128,16 @@ class ProductComplentItemViewSet(viewsets.ModelViewSet):
     serializer_class = ProductComplementItemSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['title']
+    filterset_fields = ['title', 'complementCategory']
     def get_queryset(self):
-        return  ProductComplementItem.objects.filter()
+        user = self.request.user
+        try:
+            return  ProductComplementItem.objects.filter(complementCategory__restaurant=user.employer.restaurant).order_by('order')
+        except AttributeError:
+            try:
+                return  ProductComplementItem.objects.filter(complementCategory__restaurant=user.restaurants).order_by('order')
+            except AttributeError:
+                return  ProductComplementItem.objects.none()
     
 class TableViewSet(viewsets.ModelViewSet):
     serializer_class = TableSerializer
