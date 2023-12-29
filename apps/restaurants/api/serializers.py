@@ -366,7 +366,7 @@ class ProductCategoryCatalogSerializer(serializers.ModelSerializer):
 
 class ProductCatalogSerializer(serializers.ModelSerializer):
     product_category = ProductCategoryCatalogSerializer(read_only=True)
-    complement_categories = ProductComplementSerializer(many=True, read_only=True)
+    complement_categories = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Product
         fields = [
@@ -381,6 +381,11 @@ class ProductCatalogSerializer(serializers.ModelSerializer):
             "product_category",
             "complement_categories"
         ]
+
+    def get_complement_categories(self, obj):
+        complement_categories = obj.complement_categories.filter(active=True).order_by('order', 'title')
+        serializer = ProductComplementSerializer(complement_categories, many=True)
+        return serializer.data
 
 class ProductComplementPriceSerializer(serializers.ModelSerializer):
     class Meta:
