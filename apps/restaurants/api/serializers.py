@@ -431,7 +431,7 @@ class CatalogSerializer(serializers.ModelSerializer):
         return serializer.data
     
     def get_complement_prices(self, obj):
-        complement_prices = obj.complement_prices.filter(product_complement_item__active=True).order_by('product_complement_item__order')
+        complement_prices = obj.complement_prices.filter(product_complement_item__active=True).order_by('product_complement_item__complementCategory__order', 'product_complement_item__complementCategory__title', 'product_complement_item__order', 'product_complement_item__title')
         serializer = ProductComplementPriceSerializer(complement_prices, many=True)
         return serializer.data
     
