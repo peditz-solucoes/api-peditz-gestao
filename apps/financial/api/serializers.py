@@ -56,6 +56,8 @@ class CashierSerializer(serializers.ModelSerializer):
                 restaurant = employer.restaurant
             except Employer.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Este usuário não é funcionário de nenhum restaurante."})
+        if restaurant.active is False:
+            raise serializers.ValidationError({"detail":"No momento seu acesso está suspenso, para regularizar seu pagamento procure o suporte pelo Whatsapp +55 11 93947‑4125"})
         validated_data['restaurant'] = restaurant
         if Cashier.objects.filter(restaurant=restaurant, open=True).exists() and validated_data['open'] == True:
             raise serializers.ValidationError({"detail":"Já existe um caixa aberto para este restaurante."})

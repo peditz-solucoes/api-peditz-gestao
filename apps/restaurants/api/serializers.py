@@ -32,7 +32,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=RestauratCategory.objects.all(), write_only=True) 
     class Meta:
         model = Restaurant
-        fields = ['id', 'owner', 'url', 'category', 'category_detail', 
+        fields = ['active','id', 'owner', 'url', 'category', 'category_detail', 
                     'email',
                     'slug',
                     'title',
