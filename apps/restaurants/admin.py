@@ -16,6 +16,7 @@ class ResstaurantAdmin(admin.ModelAdmin):
     fieldsets = [
         (_('Restaurant'), {
             'fields': [
+                'active',
                 'id',
                 'photo',
                 'title',
