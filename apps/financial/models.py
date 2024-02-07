@@ -413,7 +413,9 @@ class CancelationReason(TimeStampedModel, UUIDModel):
     operator = models.ForeignKey(User, verbose_name=_('Operator'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
     product = models.ForeignKey(Product, verbose_name=_('Product'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
     product_title = models.CharField(_('Product title'), max_length=255, blank=True, null=True)
-
+    cashier = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
+    quantity = models.DecimalField(_('Quantity'), max_digits=10, decimal_places=3, default=1)
+    bill = models.ForeignKey(Bill, verbose_name=_('Bill'), on_delete=models.SET_NULL, related_name='cancelation_reasons', blank=True, null=True)
     def save(self, *args, **kwargs):
         if self.product:
             self.product_title = self.product.title

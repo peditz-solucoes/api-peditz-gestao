@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 from uuid import UUID
 from rest_framework import serializers
-from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment, TakeoutOrder
+from apps.financial.models import Cashier, Bill, Order, OrderGroup, OrderStatus, OrderComplement, OrderComplementItem, PaymentMethod, PaymentGroup, Payment, TakeoutOrder, CancelationReason
 from apps.restaurants.models import Restaurant, Employer, Product, ProductComplementCategory, ProductComplementItem, ProductPrice, ComplementPrice
 from apps.user.api.serializers import UserSerializer
 from apps.restaurants.api.serializers import EmployerSerializer, RestaurantSerializer, TableSerializer
@@ -402,9 +402,10 @@ class DeleteOrderSerializer(serializers.ModelSerializer):
     operator_code = serializers.CharField(write_only=True)
     order_id = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all(), write_only=True)
     message = serializers.CharField(read_only=True)
+    reason = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     class Meta:
         model = Order
-        fields = ['id', 'operator_code', 'order_id', 'message']
+        fields = ['id', 'operator_code', 'order_id', 'message', 'reason']
 
     def create(self, validated_data):
         try:
@@ -415,6 +416,24 @@ class DeleteOrderSerializer(serializers.ModelSerializer):
             order = Order.objects.get(id=validated_data.get('order_id', None).id)
         except Order.DoesNotExist:
             raise serializers.ValidationError({"detail":"Pedido não encontrado."})
+        
+        try:
+            cashier = Cashier.objects.get(open=True, restaurant=order.order_group.restaurant)
+        except Cashier.DoesNotExist:
+            raise serializers.ValidationError({"detail":"Não há caixa aberto para este restaurante."})
+        
+        cancelation_reason = CancelationReason.objects.create(
+            title="Cancelamento de pedido",
+            type="ORDER",
+            restaurant=order.order_group.restaurant,
+            reason=validated_data.get('reason', ''),
+            operator=employer.user,
+            product=order.product,
+            product_title=order.product_title,
+            cashier=cashier,
+            quantity=order.quantity,
+        )
+        cancelation_reason.save()
         order.delete()
 
         validated_data['message'] = 'Pedido excluído com sucesso.'
@@ -516,11 +535,13 @@ class CloseBillSerializer(serializers.ModelSerializer):
     operator_code = serializers.CharField(write_only=True)
     bill_id = serializers.PrimaryKeyRelatedField(queryset=Bill.objects.filter(open=True), write_only=True)
     message = serializers.CharField(read_only=True)
+    reason = serializers.CharField(write_only=True, allow_blank=True, allow_null=True, required=False)
     class Meta:
         model = Bill
-        fields = ['id', 'operator_code', 'bill_id', 'message']
+        fields = ['id', 'operator_code', 'bill_id', 'message', 'reason']
         read_only_fields = ['message', 'id']
-
+    
+    @transaction.atomic
     def create(self, validated_data):
         try:
             employer = Employer.objects.get(code=validated_data.get('operator_code', None), restaurant=validated_data.get('bill_id', None).cashier.restaurant) 
@@ -534,6 +555,17 @@ class CloseBillSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail":"Conta não encontrada."})
         bill.open = False
         bill.save()
+
+        cr = CancelationReason.objects.create(
+            title="Fechamento de conta",
+            type="BILL",
+            restaurant=bill.cashier.restaurant,
+            reason=validated_data.get('reason', ''),
+            operator=employer.user,
+            cashier=bill.cashier,
+            bill=bill,
+        )
+        cr.save()
         validated_data['message'] = 'Conta fechada com sucesso.'
         return validated_data
     
