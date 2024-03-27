@@ -51,14 +51,15 @@ class FocusClientApi:
             icms_value = icm_base_calculation * (product.icms_aliquota/100)
             icms_value = str(round(icms_value, 2))
             icm_base_calculation = str(round(icm_base_calculation, 2))
+            valor_unitario = round(order.total / order.quantity, 2)
             note_item = {
                 "numero_item": index,
                 "codigo_ncm": product.codigo_ncm,
                 "quantidade_comercial": str(item['quantity']),
                 "quantidade_tributavel": str(item['quantity']),
                 "cfop": product.cfop,
-                "valor_unitario_tributavel": str(order.total/order.quantity),
-                "valor_unitario_comercial": str(order.total/order.quantity),
+                "valor_unitario_tributavel": str(valor_unitario),
+                "valor_unitario_comercial": str(valor_unitario),
                 "valor_desconto": "0.00",
                 "descricao": product.title,
                 "valor_bruto": str(order.total),
