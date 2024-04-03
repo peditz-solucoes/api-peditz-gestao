@@ -46,7 +46,8 @@ from apps.financial.api.viewsets import (
     CloseBillViewSet,
     TakeOutOurderViewSet,
     OrderStatusViewSet,
-    DeliveryOrderViewSet
+    DeliveryOrderViewSet,
+    CashierStatsViewSet
 )
 from apps.inventory.api.viewsets import (
     ItemStockViewSet,
@@ -117,6 +118,7 @@ router.register(r'delivery-configs', DeliveryConfigsViewSet, basename='delivery-
 router.register(r'delivery-restaurant', DeliveryRestaurantViewsets, basename='delivery-restaurant')
 router.register(r'delivery-status', DeliveryStatusViewSet, basename='delivery-status')
 router.register(r'payment-delivery', PaymentDelverysViewSet, basename='payment-delivery')
+router.register(r'cashier-stats', CashierStatsViewSet, basename='cashier-stats')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

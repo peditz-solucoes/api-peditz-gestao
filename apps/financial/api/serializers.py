@@ -1007,3 +1007,32 @@ class OrderStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderStatus
         fields = '__all__'
+
+
+class CancelationReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CancelationReason
+        fields = ['title', 'reason', 'created', 'id', 'type', 'operator_name', 'product_title', 'quantity', 'bill_number']
+
+
+class CashierStatsSerializer(serializers.ModelSerializer):
+    cancelation_reasons = CancelationReasonSerializer(many=True, read_only=True)
+    payment_groups = ListPaymentsGroupsSerializer(many=True, read_only=True)
+    class Meta:
+        model = Cashier
+        fields = [
+            'id',
+            'open',
+            'identifier',
+            'initial_value',
+            'opened_by_name',
+            'closed_by_name',
+            'created',
+            'modified',
+            'closed_at',
+            'cancelation_reasons',
+            'payment_groups',
+        ]
+
+
+
