@@ -21,7 +21,8 @@ from .serializers import (
     CloseBillSerializer,
     TakeOutOurderSerialier,
     OrderStatusSerializer,
-    DeliveryOrderSerialier
+    DeliveryOrderSerialier,
+    CashierStatsSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
@@ -204,3 +205,11 @@ class OrderStatusViewSet(viewsets.ModelViewSet):
             restaurant = user.employer.restaurant
             return OrderStatus.objects.filter(restaurant=restaurant)
         return OrderGroup.objects.none()
+    
+
+class CashierStatsViewSet(viewsets.ModelViewSet):
+    serializer_class = CashierStatsSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['get']
+    def get_queryset(self):
+        return Cashier.objects.all()

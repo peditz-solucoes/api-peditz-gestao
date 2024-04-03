@@ -104,4 +104,5 @@ class PaymentGroupAdmin(admin.ModelAdmin):
 
 @admin.register(CancelationReason)
 class CancelationReasonAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['title', 'type', 'restaurant', 'reason', 'created', 'operator']
+    list_filter = [('restaurant', RelatedDropdownFilter), ('type', DropdownFilter), ('operator', RelatedDropdownFilter), 'created']
