@@ -456,6 +456,7 @@ class PaymentGroupSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         user = self.context['request'].user
+        discount = validated_data.get('discount', 0)
         cashier = None
         try: 
             cashier = Cashier.objects.get(restaurant=user.employer.restaurant, open=True)
@@ -466,6 +467,7 @@ class PaymentGroupSerializer(serializers.ModelSerializer):
             total= 0,
             type= 'BILL',
             cashier= cashier,
+            discount=discount,
         )
         bills = validated_data.get('bills', None)
         if bills is None or len(bills) == 0:

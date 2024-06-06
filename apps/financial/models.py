@@ -79,6 +79,7 @@ class PaymentGroup(TimeStampedModel, UUIDModel):
 
     type = models.CharField(_('Type'), max_length=255, choices=ORDER_GOUP_TYPES)
     tip = models.DecimalField(_('Tip'), max_digits=10, decimal_places=2, default=0)
+    discount = models.DecimalField(_('Discount'), max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(_('Total'), max_digits=10, decimal_places=2, default=0)
     cashier  = models.ForeignKey(Cashier, verbose_name=_('Cashier'), on_delete=models.CASCADE, related_name='payment_groups')
 
