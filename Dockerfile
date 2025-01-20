@@ -23,7 +23,7 @@ ARG FOCUS_URL
 
 RUN python manage.py collectstatic
 
-ENV DJANGO_SETTINGS_MODULE=redesanta.settings
+ENV DJANGO_SETTINGS_MODULE=peditz.settings
 
 EXPOSE 8000
 
