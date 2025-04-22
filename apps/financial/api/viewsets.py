@@ -1,5 +1,6 @@
 
 
+from fastapi import Response
 from rest_framework import viewsets
 from apps.financial.models import (
     Cashier,
@@ -9,6 +10,7 @@ from apps.financial.models import (
     PaymentGroup,
     OrderStatus
 )
+from apps.restaurants.models import Employer
 from .serializers import (
     CashierSerializer,
     BillSerializer,
@@ -173,6 +175,19 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
     filterset_class = PaymentGroupFilter
+
+    def list (self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        user = self.request.user
+        try:
+            employer = Employer.objects.get(user=user)
+        except Employer.DoesNotExist:
+            return Response({"detail": "Employer not found."}, status=404)
+        if employer.role != 'GERENTE':
+            return Response({"detail": "Permission denied."}, status=400)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
     def get_queryset(self):
         user = self.request.user
