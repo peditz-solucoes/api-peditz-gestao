@@ -178,9 +178,12 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
+        cashier = self.request.query_params.get('cashier', None)
         try:
             employer = Employer.objects.get(user=user)
         except Employer.DoesNotExist:
+            return PaymentGroup.objects.none()
+        if not cashier and employer.role != 'GERENTE':
             return PaymentGroup.objects.none()
         try:
             restaurant = user.employer.restaurant
