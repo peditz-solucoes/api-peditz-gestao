@@ -175,9 +175,9 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
     filterset_class = PaymentGroupFilter
+    queryset = PaymentGroup.objects.all()
 
     def list (self, request, *args, **kwargs):
-        queryset = self.get_queryset()
         user = self.request.user
         try:
             restaurant = user.employer.restaurant
