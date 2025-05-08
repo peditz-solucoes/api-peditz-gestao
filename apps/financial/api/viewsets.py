@@ -175,27 +175,28 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
     filter_backends = [DjangoFilterBackend]
     filterset_class = PaymentGroupFilter
-    queryset = PaymentGroup.objects.all()
-
-    def list (self, request, *args, **kwargs):
+    
+    def get_queryset(self):
         user = self.request.user
-        try:
-            restaurant = user.employer.restaurant
-            queryset = PaymentGroup.objects.filter(cashier__restaurant=restaurant)
-        except AttributeError:
-            try:
-                restaurant = user.restaurants
-                queryset = PaymentGroup.objects.filter(cashier__restaurant=restaurant)
-            except AttributeError:
-                queryset = PaymentGroup.objects.none()
         try:
             employer = Employer.objects.get(user=user)
         except Employer.DoesNotExist:
-            return Response({"detail": "Employer not found."}, status=404)
-        if employer.role == 'GERENTE' or employer.office == 'Caixa':
-            serializer = ListPaymentsGroupsSerializer(queryset, many=True)
-            return Response(serializer.data)
-        return Response({"detail": "Permission denied."}, status=400)
+            return PaymentGroup.objects.none()
+        try:
+            restaurant = user.employer.restaurant
+            if employer.role == 'GERENTE' or employer.office == 'Caixa':
+                return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+            else:
+                return PaymentGroup.objects.none()
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+                if employer.role == 'GERENTE' or employer.office == 'Caixa':
+                    return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+                else:
+                    return PaymentGroup.objects.none()
+            except AttributeError:
+                return PaymentGroup.objects.none()
             
 class CloseBillViewSet(viewsets.ModelViewSet):
     serializer_class = CloseBillSerializer
