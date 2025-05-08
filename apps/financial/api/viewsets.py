@@ -180,6 +180,15 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         user = self.request.user
         try:
+            restaurant = user.employer.restaurant
+            queryset = PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+        except AttributeError:
+            try:
+                restaurant = user.restaurants
+                queryset = PaymentGroup.objects.filter(cashier__restaurant=restaurant)
+            except AttributeError:
+                queryset = PaymentGroup.objects.none()
+        try:
             employer = Employer.objects.get(user=user)
         except Employer.DoesNotExist:
             return Response({"detail": "Employer not found."}, status=404)
