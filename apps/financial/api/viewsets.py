@@ -183,10 +183,10 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
             employer = Employer.objects.get(user=user)
         except Employer.DoesNotExist:
             return Response({"detail": "Employer not found."}, status=404)
-        if employer.role != 'GERENTE':
-            return Response({"detail": "Permission denied."}, status=400)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        if employer.role == 'GERENTE' or employer.office == 'caixa':
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        return Response({"detail": "Permission denied."}, status=400)
 
 
     def get_queryset(self):
