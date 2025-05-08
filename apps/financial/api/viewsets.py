@@ -192,23 +192,10 @@ class ListPaymentGroupViewSet(viewsets.ModelViewSet):
             employer = Employer.objects.get(user=user)
         except Employer.DoesNotExist:
             return Response({"detail": "Employer not found."}, status=404)
-        if employer.role == 'GERENTE' or employer.office == 'caixa':
-            serializer = self.get_serializer(queryset, many=True)
+        if employer.role == 'GERENTE' or employer.office == 'Caixa':
+            serializer = ListPaymentsGroupsSerializer(queryset, many=True)
             return Response(serializer.data)
         return Response({"detail": "Permission denied."}, status=400)
-
-
-    def get_queryset(self):
-        user = self.request.user
-        try:
-            restaurant = user.employer.restaurant
-            return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
-        except AttributeError:
-            try:
-                restaurant = user.restaurants
-                return PaymentGroup.objects.filter(cashier__restaurant=restaurant)
-            except AttributeError:
-                return PaymentGroup.objects.none()
             
 class CloseBillViewSet(viewsets.ModelViewSet):
     serializer_class = CloseBillSerializer
