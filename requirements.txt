@@ -15,7 +15,6 @@ django-extensions==3.2.3
 django-filter==23.2
 django-imagekit==4.1.0
 django-localflavor==4.0
-newrelic==9.1.0
 django-model-utils==4.3.1
 django-phonenumber-field==7.1.0
 django-storages==1.13.2
@@ -23,7 +22,7 @@ djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 Markdown==3.4.3
 phonenumbers==8.13.14
-Pillow==9.5.0
+pillow==10.3.0
 psycopg==3.1.9
 psycopg2==2.9.6
 psycopg2-binary==2.9.6
