@@ -247,6 +247,7 @@ class Table(TimeStampedModel, UUIDModel):
     class Meta:
         verbose_name = _('Table')
         verbose_name_plural = _('Tables')
+        ordering = ['order']
     
     title = models.CharField(max_length=255)
     description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
