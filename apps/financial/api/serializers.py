@@ -331,10 +331,12 @@ class OrderGroupSerialier(serializers.ModelSerializer):
 
         if validated_data.get('from_app', False):
             channel_layer = get_channel_layer()
+            json_ws = json_r.copy()
+            json_ws['bill']['table'] = json_ws['bill']['table_datail']
             async_to_sync(channel_layer.group_send)(
                 "pedidos_%s" % restaurant.id,
                 {"type": "order",
-                    "message": json.dumps(json_r, cls=UUIDEncoder)
+                    "message": json.dumps(json_ws, cls=UUIDEncoder)
                 }
             )
         return order_group
